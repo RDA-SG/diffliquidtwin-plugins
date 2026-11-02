@@ -48,7 +48,37 @@ def test_marketplaces_resolve_the_thin_codex_plugin():
     # Package contents are an installation contract: no local runtime or UI can
     # hide a deployment error by taking the place of the service-owned App.
     assert {path.name for path in PLUGIN.iterdir()} == {
-        '.codex-plugin', '.mcp.json', 'skills', 'assets', 'README.md', 'GETTING_STARTED.md'}
+        '.codex-plugin', '.claude-plugin', '.mcp.json', 'skills', 'assets', 'README.md',
+        'GETTING_STARTED.md'}
+
+
+def test_claude_marketplace_resolves_the_same_thin_plugin():
+    catalog = json.loads((ROOT / '.claude-plugin/marketplace.json').read_text())
+    assert catalog['name'] == 'rda-cooling-lab'
+    entry = next(item for item in catalog['plugins'] if item['name'] == 'diffliquidtwin')
+    assert entry['source'].startswith('./')
+    assert (ROOT / entry['source']).resolve() == PLUGIN
+    claude = json.loads((PLUGIN / '.claude-plugin/plugin.json').read_text())
+    codex = json.loads((PLUGIN / '.codex-plugin/plugin.json').read_text())
+    # One package, two client manifests: identity, release and the remote
+    # server declaration must not drift between hosts.
+    assert claude['name'] == codex['name'] == entry['name']
+    assert claude['version'] == codex['version'] == entry['version']
+    assert claude['mcpServers'] == codex['mcpServers'] == './.mcp.json'
+    assert (PLUGIN / claude['skills']).resolve() == (PLUGIN / codex['skills']).resolve()
+    # OAuth client details belong to the host's discovery (CIMD/DCR), never
+    # to the published package.
+    assert not {'oauth', 'clientId', 'clientSecret', 'headers', 'env'} & set(claude)
+
+
+def test_installed_claude_validator_accepts_plugin_and_marketplace():
+    claude = shutil.which('claude')
+    if claude is None:
+        pytest.skip('Claude Code CLI is required for native manifest validation')
+    for target in (PLUGIN, ROOT):
+        result = subprocess.run([claude, 'plugin', 'validate', '--strict', str(target)],
+                                capture_output=True, text=True, timeout=60)
+        assert result.returncode == 0, result.stdout + result.stderr
 
 
 def test_installed_codex_parser_discovers_the_remote_server(tmp_path):

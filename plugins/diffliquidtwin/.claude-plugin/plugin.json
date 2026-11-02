@@ -1,0 +1,21 @@
+{
+  "name": "diffliquidtwin",
+  "version": "0.2.2",
+  "description": "Build cooling models, simulate operating conditions, and explore results in linked 3D views and charts with Claude, using the Red Dot AI hosted service (team sign-in required).",
+  "author": {
+    "name": "Red Dot AI",
+    "url": "https://rda.ai"
+  },
+  "homepage": "https://github.com/RDA-SG/diffliquidtwin-plugins",
+  "repository": "https://github.com/RDA-SG/diffliquidtwin-plugins",
+  "keywords": [
+    "data-center",
+    "liquid-cooling",
+    "simulation",
+    "digital-twin",
+    "mcp"
+  ],
+  "icon": "./assets/icon.png",
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json"
+}

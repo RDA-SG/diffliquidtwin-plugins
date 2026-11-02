@@ -1,0 +1,19 @@
+{
+  "name": "rda-cooling-lab",
+  "owner": {
+    "name": "Red Dot AI",
+    "url": "https://rda.ai"
+  },
+  "metadata": {
+    "description": "Red Dot AI plugins for the RDA Cooling Lab hosted service."
+  },
+  "plugins": [
+    {
+      "name": "diffliquidtwin",
+      "source": "./plugins/diffliquidtwin",
+      "description": "RDA Cooling Lab: cooling models, transient simulation and linked 3D result exploration.",
+      "version": "0.2.2",
+      "category": "productivity"
+    }
+  ]
+}
