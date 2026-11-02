@@ -1,0 +1,38 @@
+{
+  "name": "diffliquidtwin",
+  "version": "0.2.2",
+  "description": "Build cooling models, simulate operating conditions, and explore results in linked 3D views and charts with Codex.",
+  "author": {
+    "name": "Red Dot AI",
+    "url": "https://rda.ai"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "RDA Cooling Lab",
+    "shortDescription": "Cooling models and simulation",
+    "longDescription": "Create parameterized cooling models or freely arrange equipment and pipe circuits.\n\nRun simulations and Python analyses, then explore temperature, flow and derived metrics in linked 3D views and charts. Ask Codex to navigate, inspect components and explain results with their sources. Selection and time stay connected to your conversation.\n\nChoose a starter prompt below. Uses the Red Dot AI remote simulation service with team sign-in. Concept prototype.",
+    "developerName": "Red Dot AI",
+    "websiteURL": "https://rda.ai",
+    "category": "Productivity",
+    "capabilities": [
+      "Parameterized models",
+      "Custom scenes",
+      "Transient simulation",
+      "Interactive 3D",
+      "Agent view control",
+      "Python analysis"
+    ],
+    "logo": "./assets/rda-icon.svg",
+    "logoDark": "./assets/rda-icon.svg",
+    "composerIcon": "./assets/rda-icon.svg",
+    "composerIconDark": "./assets/rda-icon.svg",
+    "brandColor": "#D42128",
+    "brandColorDark": "#D42128",
+    "defaultPrompt": [
+      "Build a ~10 MW Vera Rubin room from DSX, simulate changing loads, and explore hotspots in linked 3D views and charts.",
+      "Build a custom cooling scene with racks, a CDU and primary-side equipment; show its connections in 3D.",
+      "Analyze a saved simulation with Python, map a derived metric onto the 3D scene, and explain selected components."
+    ]
+  },
+  "mcpServers": "./.mcp.json"
+}

@@ -1,0 +1,20 @@
+{
+  "name": "rda-cooling-lab",
+  "interface": {
+    "displayName": "Red Dot AI"
+  },
+  "plugins": [
+    {
+      "name": "diffliquidtwin",
+      "source": {
+        "source": "local",
+        "path": "./diffliquidtwin"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

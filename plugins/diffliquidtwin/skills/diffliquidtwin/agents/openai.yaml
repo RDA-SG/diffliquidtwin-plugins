@@ -1,0 +1,4 @@
+interface:
+  display_name: "RDA Cooling Lab"
+  short_description: "Cooling models and simulation"
+  brand_color: "#D42128"
