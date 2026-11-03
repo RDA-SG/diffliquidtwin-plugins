@@ -18,6 +18,8 @@ The Platform supplies the viewer, tools, simulations and stored results. Inspect
 
 Only the Codex package is currently provided. A future Claude Code package can share this repository while using its own manifest and marketplace entry.
 
+New experiments use the service's automatic Engine method selection. An automatic thermal-step limit is JSON `null`; positive caps and explicit methods remain available. Read saved execution evidence for actual methods, fallbacks and tolerance scope. The plugin supplies no solver or frontend bundle.
+
 ## Development
 
 The root `.agents/plugins/marketplace.json` is the primary marketplace entry. The nested `plugins/.agents/plugins/marketplace.json` supports local marketplace registration. Do not register both sources with the same marketplace name.

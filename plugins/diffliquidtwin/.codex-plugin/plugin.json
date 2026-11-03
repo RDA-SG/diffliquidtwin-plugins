@@ -1,6 +1,6 @@
 {
   "name": "diffliquidtwin",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Build cooling models, simulate operating conditions, and explore results in linked 3D views and charts with Codex.",
   "author": {
     "name": "Red Dot AI",

@@ -4,7 +4,7 @@ Build cooling models, run simulations and Python analyses, and explore results i
 
 ## Install
 
-Add [RDA-SG/diffliquidtwin-plugins](https://github.com/RDA-SG/diffliquidtwin-plugins) as a marketplace in Codex and install **RDA Cooling Lab**. Complete Casdoor sign-in with an authorized account. Anyone may install; service access requires authorization. See [installation and sign-in](GETTING_STARTED.md).
+Add [RDA-SG/diffliquidtwin-plugins](https://github.com/RDA-SG/diffliquidtwin-plugins) as a marketplace in Codex and install **RDA Cooling Lab**. Complete Casdoor sign-in with an authorized account. Anyone may install; service access requires authorization. See [installation and sign-in](plugins/diffliquidtwin/GETTING_STARTED.md).
 
 Ask Codex to open RDA Cooling Lab. Modeling instructions stay in the conversation. Resume an existing experiment using its session ID.
 
@@ -17,3 +17,11 @@ The plugin contains skills, display assets and a remote HTTP MCP configuration. 
 The Platform supplies the viewer, tools, simulations and stored results. Inspect returned model assumptions, solver settings and result provenance when interpreting simulations.
 
 Only the Codex package is currently provided. A future Claude Code package can share this repository while using its own manifest and marketplace entry.
+
+New experiments use the service's automatic Engine method selection. An automatic thermal-step limit is JSON `null`; positive caps and explicit methods remain available. Read saved execution evidence for actual methods, fallbacks and tolerance scope. The plugin supplies no solver or frontend bundle.
+
+## Development
+
+The root `.agents/plugins/marketplace.json` is the primary marketplace entry. The nested `plugins/.agents/plugins/marketplace.json` supports local marketplace registration. Do not register both sources with the same marketplace name.
+
+Run `python -m pytest tests` to check package paths and exercise the installed Codex plugin loader. The loader test requires the Codex CLI.
