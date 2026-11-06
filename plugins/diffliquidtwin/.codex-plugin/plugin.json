@@ -1,6 +1,6 @@
 {
   "name": "diffliquidtwin",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "Build cooling models, simulate operating conditions, and explore results in linked 3D views and charts with Codex.",
   "author": {
     "name": "Red Dot AI",
@@ -20,7 +20,9 @@
       "Transient simulation",
       "Interactive 3D",
       "Agent view control",
-      "Python analysis"
+      "Python analysis",
+      "Async differentiable tasks",
+      "Safety envelope diagnostics"
     ],
     "logo": "./assets/rda-icon.svg",
     "logoDark": "./assets/rda-icon.svg",

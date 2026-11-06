@@ -113,6 +113,114 @@ A generic rack starts as a cabinet and frame. Declare servers, trays and cold pl
 
 For a continuous illustrative rack circuit, explicitly declare supply/return manifolds and hoses through each server's cold plates. Equipment `properties.internalConnections` declares directed `{from,to}` port links; each requires exactly one matching `internalFlowPaths` entry with `from`, `to`, positive `diameterM`, and owner-local metre `points` whose endpoints equal those ports. These paths render under the owning equipment and follow yaw, Inspect, hiding and bounds. Label exposed cold-plate channels as illustrative; never imply solved flow or temperature. The backend Python helper `prototype.rack_circuit.add_rack_circuits(document, rack_ids)` supports the declared ordinary 4-server / 2-plate-per-server assembly and preserves exterior auto/exact routing intent; use its returned document with `update_scene` rather than inventing hidden connectivity.
 
+## Wave 4A tools and opt-in physics
+
+Plugin `0.3.0` adds references for the following service tools. Discover the
+connected service's schemas before use; installing the plugin does not deploy
+new backend capabilities. All stateful tools require the retained `sessionId`.
+
+| Tool | Engine task | Task-specific options |
+| --- | --- | --- |
+| `calibrate_parameters` | `Calibrator` | `measurements={"flow:EDGE":value,...}`, optional `numSteps` |
+| `optimize_controls` | `ControlOptimizer` | `measurementKey`, `target`, optional `numSteps`, `learningRate`; static setpoints |
+| `optimize_design` | `DesignOptimizer` | `objective={flow:EDGE,target:value}`, optional `numSteps` |
+| `analyze_observability` | `ObservabilityAnalyzer` | `measurementKeys`, optional `mode=hydraulic|coupled` |
+| `design_sensors` | `SensorDesigner` | `candidateIds`, `nSensors`, optional `measurementType`, `mode`, `criterion=D|A|E` |
+
+Each submission requires `options.parameters=[{component,parameter,value,
+bounds:[low,high]}]` with finite ordered scalar bounds. Parameter names are
+Engine attributes (Pipe `d`, Pump `N`), not UI labels. Measurements use exact
+`pressure:NODE`, `temperature:NODE`, `flow:EDGE` keys. Pass `sceneId` with an
+executable `solverModel`, Hall `model/config`, or an immutable `sourceRunId`.
+Hall tasks freeze the initial operating point rather than replaying load/fault
+schedules. Calibration/design use bounded steady objectives; observability and
+sensing use normalized sensitivities. Static control optimization uses the
+submitted duration/dt/solver settings. PID tuning, custom objectives,
+time-dependent schedules and coupled-facility boundary laws use `run_analysis`.
+
+These tools queue through the same `JobScheduler` as simulations. Retain the
+returned job ID and poll `get_task_result(sessionId,jobId)` until terminal;
+`result` is null while queued/running. The equivalent App action is
+`hall_api(action="task_result",args={jobId})`; submission action names match
+the five tools above. Report failure messages as failures. Completed results
+contain the Engine class, numerical result and private parameter-store values,
+with `draftMutated=false`. Undefined infinite condition numbers/scores use null.
+They never apply optimized values to the draft. Read-only sessions may retrieve
+results but cannot submit/cancel jobs. Existing cancel/delete/Keep/cleanup and
+bounded retention rules apply; polling does not extend retention. These JSON
+results have no trajectory frames; do not open them with `focus_hall(runId)`.
+`get_hall(runId)` exposes the request and result separately from simulation data.
+
+Hall/2D schemas expose `cooling_tower`, `cold_plate_2d`, `cold_plate_3d`,
+`check_valve`, `dpcv`, `picv`, `expansion_tank`; Pipe `Q_wall_loss`, `UA_amb`,
+`T_amb`, `T_fluid_init`, `K_minor`, `outlet_diameter`; pump `eta_max`, `eta_min`,
+`alpha_eff`, `q_bep_fraction`; valve `linear`/`eqperc`/`quick`, explicit leakage
+and smoothing; and flow-dependent HTC with `flow_dependent_htc`,
+`htc_reference_mdot` (plates), `htc_hydraulic_diameter`, `htc_flow_area`.
+Temperature boundary mappings retain `temperature_bc`. Engine validates liquid
+continuity, geometry and actual constructor inputs. The paired Engine supports
+`water` and `dowfrost-lc25`. It does **not** accept generic `pg25`, `eg30`,
+`Re_ref`, `Re_0`, `n_re`, or `Q_bep_ref`; do not promise those controls or alias
+generic glycol formulations to a named volume-percent product. PG25 HX inertia
+remains quasi-steady until Engine supports that dynamic law.
+
+Optional scenario `traySubmodels=[{rack:1,tray:1,type:"cold_plate_2d",
+parameters:{Nx:4,Ny:4}}]` (or 3D with `Nz`) preserves field states only on chosen
+trays. Viewer plate values show the hottest solid cell. Other trays stay 0D;
+the lumped energy ledger is unavailable for mixed field models.
+
+Read `run.safetyEnvelope` and `run.alerts` for sampled MAWP, high-point vacuum,
+pump NPSHa/NPSHr, pipe velocity and rack minimum-differential-pressure checks.
+Reports include worst margin/entity/time and explicit unit-bearing extrema.
+Facility roots cover all solved DUs; coupled detail bundles retain the full
+accepted-step report with `scope=coupled-facility`, even when frames are decimated.
+Exactly isolated pressure-gauge nodes are omitted from absolute-pressure checks
+and reported as incomplete coverage. Actual viewer context reports
+`safetyEnvelope` and `safetyAlerts`; these are saved diagnostics, not proof of
+continuous-time or OEM safety. Scenario `safetyLimits` can set `mawpPa`,
+`vacuumMarginPa`, `pumpInletDiameterM`, `npshrM`, `maxVelocityMps`, `minRackDpPa`.
+Defaults are explicitly illustrative and require qualified site limits before
+safety decisions.
+
+Keep default `dsx-v2` six-running/one-isolated-standby behavior unchanged unless
+fault/control modeling is requested. `dsxControls:true`, or explicit
+`controlEvents`, inserts CDU CheckValves, rack LK-01 supply/return isolation,
+row LK-02 supply/return isolation, rack PICV (`DH-07`) and SU lumped DPCVs. Read exact
+IDs and row mappings from saved scene `dsxDevices`; visual control relationships
+remain reference evidence rather than telemetry. Curves and staging are
+illustrative, not OEM SOO validation. CheckValve permits its declared tiny
+reverse leakage; never claim mathematically zero reverse flow.
+
+Events are ordered, dt-aligned objects with `time` and `kind`:
+`pump-trip` requires `cdu=1..7` and automatically cuts in `cdu7` unless
+`automaticStandby:false`; `standby-cut-in` starts it explicitly; `pump-speed`
+uses `cdu/value` rpm. A trip remains latched. `LK-01` uses `rack`, `LK-02` uses
+`rowId`; both latch until explicit `reset` for that row. `DH-07` uses rack and
+opening `value` in [0,1]; `DPCV` uses a positive Pa setpoint `value`. The standby
+primary valve holds the declared .4 opening after cut-in without borrowing a
+running CDU's PID state. LK-02 commands actual served rack supply/return branch valves and
+does not claim an unsolved reference row route changed its pipe geometry.
+
+For DSX `solveScope=facility`, optional `sharedPrimaryLoop:true` couples all DU
+primary branches through one finite-head water plant and geometry-length pipes.
+Secondary PG25 domains remain separate. Inspect `partitionExecution.mode`:
+`coupled-primary` uses one simultaneous network solve, while the default keeps
+independent DUs and optional `partitionWorkers`. Lazy detail bundles project
+that shared solve without rerunning; each saved `model.json` and execution
+report retains the full coupled topology. Fixed plant return pressure and
+37 C temperature still idealize heat rejection; no chiller/tower capacity is
+inferred. Local events apply to the submitted detail DU.
+
+Custom scenes can opt in to `solverExport={fluid:"water",boundaryConditions:[...]}`.
+Boundaries address `equipmentId:portId`; at least one pressure reference is
+required. Resolved automatic/exact `pipe_routing` geometry exports length,
+elevation and diameter. Explicit `rack_circuit` paths preserve series/parallel
+cold plates and manifold paths, without introducing shell bypasses. Device
+`properties.solver={type?,params,fluid?}` supplies constitutive inputs, and
+Engine defaults remain assumptions. Geometry crossings do not create junctions.
+The attached `solverModel` regenerates on edits and can run through analysis or
+a differentiable task. Geometry alone does not calibrate device behavior.
+
 ## Model and physical scope
 
 For DSX coverage, read `simulationScope.status` and `resultAvailable` from `get_hall.facility`, saved `inputs` or the displayed scene. Planned coverage is not a completed calculation. `detailSimulationScope` describes the visible DU independently of the configured/saved facility calculation. Analyses without inherited builtin results report `unavailable`; explicitly published fields remain individually sourced.
@@ -127,17 +235,17 @@ Use `list_entities(sceneId=...)` to inspect a scene without opening it; do not c
 
 A fresh workspace starts with one hall, one DU, four SUs, fourteen populated GPU racks per SU, eighteen compute trays per rack, 150 kW IT per rack and 41 °C initial fluid temperature. Shared TCS supply temperature is solved. Its English name is `Vera Rubin · DSX Deployment Unit`. The DU includes 56 GPU and 32 support cabinets, spare/future positions, eight HACs, seven CDUs, seven series-connected buffer tanks, an expansion tank, five CRAHs, TCS/HTFW/MTFW routes, return-air ducts, co-located telecom trays and eight cooling BAS field panels. Scene scope includes cooling, IT loads and structures/services sharing their data hall or gallery. Power distribution equipment, power cable trays and separate electrical rooms are excluded. It opens in Equipment/model preview with no isolation or hidden components; no simulation starts automatically. `get_hall.starterModel` provides the canonical inputs used by the VR · 1 DU preset. Existing saved workspaces and runs retain their own inputs. Six running CDU branches and buffers participate in the shared TCS; the seventh is isolated. Primary hydraulics and air cooling remain outside the model.
 
-Use `layoutProfile=dsx-v2` for the supplied DSX V2 reference. Factory size is `dsxHallCount` (1–8) × `dsxDuPerHall` (1–6) × four SUs; `dsxDetailHall` and `dsxDetailDu` choose the initially detailed DU. New DSX scenarios use `solveScope=facility`: one job solves each DU's shared TCS independently and saves lazy detail bundles plus a facility summary. `solveScope=detail` keeps one-DU computation; historic snapshots missing this field remain detail runs. Read the saved run's actual coverage before interpreting it. Set `cduCount=4`: this historical field denotes four SU load groups within one shared secondary network per DU. The network contains six running CDUs and one isolated standby. `racksPerCdu` is populated GPU racks per SU (default 14; 16 provisioned positions), and `rackPitch=.6` is the planning grid. Four halls × six DUs gives 96 SUs; eight halls × four DUs gives 128 SUs. Stable facility rack/tray IDs distinguish identical local rack numbers across DUs. Use explicit detail selection to load another computed DU without editing the draft or rerunning. `focus_hall(camera=factory)` shows the whole geometry. Facility coverage does not add cross-DU primary coupling or air physics.
+Use `layoutProfile=dsx-v2` for the supplied DSX V2 reference. Factory size is `dsxHallCount` (1–8) × `dsxDuPerHall` (1–6) × four SUs; `dsxDetailHall` and `dsxDetailDu` choose the initially detailed DU. New DSX scenarios use `solveScope=facility`: one job solves each DU's shared TCS independently and saves lazy detail bundles plus a facility summary. `solveScope=detail` keeps one-DU computation; historic snapshots missing this field remain detail runs. Read the saved run's actual coverage before interpreting it. Set `cduCount=4`: this historical field denotes four SU load groups within one shared secondary network per DU. The network contains six running CDUs and one isolated standby. `racksPerCdu` is populated GPU racks per SU (default 14; 16 provisioned positions), and `rackPitch=.6` is the planning grid. Four halls × six DUs gives 96 SUs; eight halls × four DUs gives 128 SUs. Stable facility rack/tray IDs distinguish identical local rack numbers across DUs. Use explicit detail selection to load another computed DU without editing the draft or rerunning. `focus_hall(camera=factory)` shows the whole geometry. Default facility coverage keeps independent prescribed-head primary branches; explicit `sharedPrimaryLoop:true` adds coupled primary hydraulics. Air physics remains excluded.
 
 `get_hall`, `list_entities`, `inspect_entity` and `query_results` accept detailHall/detailDu for saved detail; `focus_hall(runId,detailHall,detailDu)` opens it. Stable global IDs such as `h1:du2:su1:west:gpu1:tray1:coldplate` route queries to the correct partition; entity/cameraTarget/inspectionTarget/spatialEntity can use those mapped identities. Legacy local IDs refer to the original DU unless detail is explicit. A query with no entity selection covers all solved DUs; follow its global pagination. Local rack/pod/tray rules and connector events affect the original detailed DU, while all scope applies across the facility. Local component overrides also belong to the submitted detailed DU; qualified TCS component IDs belong to their named DU. Use global load-source bindings for explicit cross-DU loads.
 
-DSX placement uses Basis of Design Rev 5 and issued mechanical/architectural PDFs: four SU strips per DU, inline compute/support HACs, 14 populated + 2 spare GPU positions, 16 support + 32 future positions per SU, rear-facing hot aisles and perpendicular mechanical galleries. The 5 ft 6 in clear hot aisle differs from the nominal 8 ft HAC frame. Header elevations, cabinet height, repeated hall spacing and solver coefficients remain assumptions. The physical 6+1 CDU population is mapped to a shared TCS with fixed six-running/one-standby operation. The 2.3 MW reference rating is not calibrated simulated capacity. This model does not demonstrate automatic redundancy, PG25 performance, TES, primary valve transients or plant capacity. Keep these limits visible when interpreting results. Use English fixed model names; UI language remains independent.
+DSX placement uses Basis of Design Rev 5 and issued mechanical/architectural PDFs: four SU strips per DU, inline compute/support HACs, 14 populated + 2 spare GPU positions, 16 support + 32 future positions per SU, rear-facing hot aisles and perpendicular mechanical galleries. The 5 ft 6 in clear hot aisle differs from the nominal 8 ft HAC frame. Header elevations, cabinet height, repeated hall spacing and solver coefficients remain assumptions. The physical 6+1 CDU population defaults to six-running/one-standby operation; explicit Wave 4A controls can stage the standby and simulate faults. The 2.3 MW reference rating is not calibrated simulated capacity. Neither these illustrative interlocks nor the fluid law qualifies OEM redundancy, PG25 performance, TES or plant capacity. Keep these limits visible when interpreting results. Use English fixed model names; UI language remains independent.
 
 Detailed equipment uses distinct procedural geometry for cooling and control equipment. `facility.equipmentInventory`, `referenceSources` and `populationNotes` expose counts, source pages and scope. `list_entities` returns source references, ratings, geometry/orientation, ownership and related connections for exact IDs; use those relationships to discover, focus, hide and explore equipment without a fixed workflow. `focus_hall(visibility={hiddenKinds:["cdu","air-duct"]})` hides complete equipment classes using exact `type` values returned by `list_entities`, without enumerating IDs. The rules persist across parameterized rebuilds, including newly generated members; absent kinds remain available for later scenes. `hiddenKinds:[]` restores those classes while preserving `hiddenIds`, `hiddenLayers` and `scopedLayers`. To show one class, read current visibility and remove only that kind from the array. Detailed live GPU cabinets have kind `rack`; distant factory GPU envelopes have kind `gpu-rack`, so both kinds select all GPU cabinets. Layer names such as `coldplate` are separate from the solver entity kind `cold_plate`. `facility.pipeRoutes` retains stable `asset:*` parent identities. Shared TCS parents bind real segments through `solverEdgeIds`; row/rack display proxies refer to existing numerical pipes. Follow child segments for temperature, flow and pressure; junctions prevent a unique aggregate parent reading. HTFW/MTFW remain reference routes. TCS supply passes through each buffer before joining twin supply headers; two normally closed valves segment the return headers. Shared CRAHs follow a cropped 14-unit gallery: 1–6 DUs produce 5/10/14/18/23/28 CRAHs. Primary services end at named CUB boundaries; the single DU does not include a fractional central plant. Counts and circuit relationships follow issued PDFs; individual envelopes, routing elevations and internal details remain `geometryAssumed`. Earlier DSX scenes receive cooling scope decoration on read; saved files and numeric samples remain unchanged. CDUs, buffers and NC valves use explicit `sampleEdgeId` bindings for builtin readings; CDU samples refer to the HX secondary side. Other reference assets require explicitly sourced published fields.
 
 The `vera-rubin-nvl72` profile follows the public Vera Rubin NVL72 layout pattern: back-to-back racks with rear faces toward a 6 ft hot aisle, outward front/service faces, hot-aisle-side supply/return, rear manifolds and row-end CDU service zones. There are 18 compute positions and 9 visual NVLink trays. Fewer populated compute trays means a partial demonstration. Up to 256 racks and 1–16 racks/CDU are supported; the schemas disclose numeric limits. Legacy schematic layouts allow up to 24 trays/rack. Exact pipe heights, offsets, tray U positions and service widths are assumptions. Reference sources and gaps appear in the scene and inputs. Do not claim complete NVIDIA/NVOnline reference conformance or construction dimensions.
 
-Schematic/NVL72 CDU circuits are independent with prescribed supply. DSX has one shared TCS per DU with prescribed HX primary conditions and computed secondary supply. Default Hall pipes have no transport delay. Explicit pipe `n_cells>0` enables the existing transport state model. Thermal/pump parameters are synthetic and cold plates are lumped equivalents. Automatic N+1 control, primary hydraulics, air cooling, facility power and support/network-rack heat remain unmodeled. Four minimum-flow bypasses are unthrottled smooth pipes; visual balancing/isolation valves add no local resistance. Hall exports detach saved tensors. Do not claim GPU junction temperatures, calibrated capacity/safety limits or Hall gradients.
+Schematic/NVL72 CDU circuits are independent with prescribed supply. DSX has one shared PG25 TCS per DU, solved local water primary branches and computed secondary supply. Upstream primary head is prescribed by default; explicit shared-primary mode couples DUs. DSX facility pipes at least 2 m have transport cells; other Hall pipes default to no delay unless `n_cells>0`. Thermal/pump parameters are synthetic and unselected cold plates stay lumped. Support heat is an explicit aggregate equivalent, not resolved support-rack physics. Minimum-flow bypasses and header ties have illustrative balancing resistance. Air cooling, facility electrical power and qualified plant capacity remain excluded. Hall exports detach saved tensors. Do not claim GPU junction temperatures, calibrated capacity/safety limits or Hall gradients.
 
 Read `get_hall(includeConfiguration=true,runId?,spatialId?,detailHall?,detailDu?)` for effective settings, units, origins, applicability, initialization and captured execution; `spatialId` selects a component. UI **Model & solver** reads the same data through its app-only transport. No run ID reads current inputs; a run ID reads its immutable execution. Reference-only selections have no numerical parameters; old missing provenance remains unknown. Do not reconstruct sources from current defaults. Hall `initialState.policy` is `model` or the explicit `supply-temperature` template assumption; named `componentStates` cover registered dynamic states, and `warmupSeconds=0` disables warmup.
 
@@ -151,7 +259,7 @@ For facility sources, `ctx.source_facility(summary=False)` returns the saved par
 
 Use `ctx.simulator(**solver_options)` to construct the shared core simulator from the current model without running it. For DSX it applies fixed equipment isolation; dynamic scenario events still require explicit analysis control. It preserves saved Hall or free-scene solver settings; explicit overrides use the schema from `describe_hall`. Generic `run_analysis` config accepts `solver` alongside name/duration/dt, and source-derived analyses retain those settings. `run()` is a value-only forward entrypoint. Use `rollout_tensor()` or the differentiable SystemModel entrypoint for gradients; auto retains a compatible differentiable route. They share numerical dispatch and return float or tensor histories. Inspect `result.execution_report` or Hall `run.executionReports` for actual fast paths and fallback reasons; enabled switches alone do not establish use. Hydraulic counters cover equilibrium evaluation, excluding IFT backward. Custom components, transport ODEs, live gradients and mutating callbacks retain appropriate generic paths. A boundary declaring `supports_packed_thermal=True` must keep topology and thermal coefficients fixed and return supported load inputs. Do not enable it for arbitrary mutating callbacks.
 
-Facility `partitionWorkers` requests 1–4 processes for independent DU solves, default 1; actual workers obey the shared CPU/slot/thread budget and appear in `partitionExecution`. This does not support arbitrary coupled partitions. Preserve the full network for cross-partition coupling.
+Facility `partitionWorkers` requests 1–4 processes for independent DU solves, default 1; actual workers obey the shared CPU/slot/thread budget and appear in `partitionExecution`. It applies only to the default independent-DU path. Explicit `sharedPrimaryLoop:true` retains and solves the full coupled network in one worker.
 
 Use `ctx.publish(fields)` inside analysis or `publish_result_fields(runId,fields)` for computed observations. Each field declares id, optional label, unit, exact entityIds, sorted times in seconds, time-major values[time][entity], and provenance. Static fields have one time, unavailable values use null. Original solver samples stay intact. Read descriptors with `get_hall(runId)`, use the new metric ID in `query_results` and `focus_hall`, and guide spatial/temporal exploration with the existing view mechanisms. Published fields may explicitly describe contextual equipment; the interface must distinguish these sourced observations from builtin solver outputs.
 

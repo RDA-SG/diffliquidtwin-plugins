@@ -2,6 +2,17 @@
 
 Build cooling models, run simulations and Python analyses, and explore results in linked 3D views and charts with the Red Dot AI hosted service.
 
+## Version 0.3.0
+
+This package documents Wave 4A Platform tools: asynchronous calibration,
+static control/design optimization, observability and D/A/E sensor design;
+sampled SafetyEnvelope diagnostics; additional field cold plates and
+valve/expansion-tank inputs; opt-in DSX fault interlocks and shared primary
+multi-DU solves. Tool availability follows the connected service's discovery,
+not the plugin version. Existing default DSX behavior remains unchanged.
+See the [skill contract](skills/diffliquidtwin/SKILL.md#wave-4a-tools-and-opt-in-physics)
+for submission, retrieval, assumptions and paired Engine compatibility gaps.
+
 ## Install
 
 Add [RDA-SG/diffliquidtwin-plugins](https://github.com/RDA-SG/diffliquidtwin-plugins) as a marketplace in Codex and install **RDA Cooling Lab**. Complete Casdoor sign-in with an authorized account. Anyone may install; service access requires authorization. See [installation and sign-in](GETTING_STARTED.md).

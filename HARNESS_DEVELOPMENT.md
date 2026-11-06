@@ -29,6 +29,26 @@ Negotiate MCP with `initialize`, then read `tools/list` and `resources/list`. Th
 
 Keep saved-run inputs and execution evidence separate from current draft edits. Async simulation tools return jobs that must be polled to a terminal state. Reopening a panel should reuse its saved session and results, without submitting another simulation. Preserve structured content, errors and metadata instead of flattening all responses into text.
 
+## Wave 4A task jobs
+
+Plugin `0.3.0` describes five asynchronous tools: `calibrate_parameters`
+(`Calibrator`), `optimize_controls` (`ControlOptimizer`, static setpoints),
+`optimize_design` (`DesignOptimizer`), `analyze_observability`
+(`ObservabilityAnalyzer`) and `design_sensors` (`SensorDesigner`). Discover
+schemas from the service; pass the application session, bounded scalar
+parameters and task-specific options. Poll `get_task_result(jobId)` to a
+terminal state. JSON task results have no simulation frames and never modify
+the draft. Read-only sessions can retrieve, but cannot submit jobs. Existing
+cancellation, deletion and retention tools apply; polling does not keep jobs.
+
+Preserve `run.safetyEnvelope` and violation `alerts`, and the viewer's reported
+`context.safetyEnvelope` / `safetyAlerts`. Limits are declared assumptions and
+samples cannot certify continuous-time or OEM safety. Optional `dsxControls`,
+`controlEvents`, `sharedPrimaryLoop`, `traySubmodels` and scene `solverExport`
+are service contracts; do not enable them merely to open a legacy result.
+The paired Engine supports water and DOWFROST LC25 selectors; generic `pg25`,
+`eg30`, `Re_ref`, `Re_0`, `n_re`, `Q_bep_ref` need further Engine support.
+
 ## Reusing the MCP App
 
 Obtain the UI resource from `open_hall` tool metadata (`_meta.ui.resourceUri`) or resource discovery; do not hardcode a resource version. The service publishes the viewer as `text/html;profile=mcp-app`. Run that resource in the harness's MCP App container with its declared CSP, theme, size, inputs and tool results.
