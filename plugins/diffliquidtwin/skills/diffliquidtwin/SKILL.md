@@ -221,6 +221,92 @@ Engine defaults remain assumptions. Geometry crossings do not create junctions.
 The attached `solverModel` regenerates on edits and can run through analysis or
 a differentiable task. Geometry alone does not calibrate device behavior.
 
+## Wave 4B assimilation and inertial hydraulics
+
+Plugin `0.3.0` documents the paired Platform `0.8.0` / Engine `0.8.0`
+interfaces. Discover the connected service's schemas before submitting; older
+`0.7.0` Engine wheels lack these estimation classes.
+
+### Online state and parameter assimilation
+
+Use `assimilate_states(sessionId, options, sceneId?|model?|config?|sourceRunId?, asynchronous?)`
+or `hall_api(action="assimilate_states", args={options,...})`.
+Choose an executable Hall model, a scene with a `solverModel`, or immutable
+saved-run inputs. Read-only sessions can retrieve completed results but cannot
+submit assimilation. Estimates never mutate the draft.
+
+Set `options.method="ekf"|"mhe"`. Each selected scalar state requires
+`{key,value,variance,processNoise,scale}`; keys are `temperature:NODE`
+or `ode_state:COMPONENT.STATE`. Each bounded parameter requires
+`{component,parameter,value,bounds:[low,high],variance,processNoise,scale}`,
+using Engine attribute names and a prior strictly inside the bounds. Use at
+most 32 joint states/parameters. Covariance order follows states then parameters.
+
+Declare positive SI variances in `measurementNoise`, keyed by exact
+`temperature:NODE`, `pressure:NODE`, `flow:EDGE` or scalar ODE-state keys.
+State/parameter `variance` is an SI variance; `processNoise` is an SI
+variance rate per second. Supply positive characteristic SI `scale` values
+and optional `measurementScales` for conditioning. These are not standard
+deviations. Bounded parameters use smooth latent coordinates internally.
+
+For streaming, submit `measurements={channel:value,...}` and optional positive
+`dt`; the default is synchronous execution with a direct JSON result. Omit
+missing channels instead of sending zero or null; an empty object predicts
+without measurements. Feed `result.continuation` into the next
+`options.continuation` with unchanged model, parameter/state order, scales and
+noise policy. Retain the returned continuation explicitly; no opaque shared
+estimator is kept by the service.
+
+For a batch, use `trajectory=[{measurements:{...},dt:...},...]` instead of
+`measurements`/`dt`. Batch defaults to a queued job. `asynchronous` selects
+the mode explicitly for either shape. Poll `get_task_result(sessionId,jobId)`;
+terminal failures remain failures. Results report `posterior`, `estimates`,
+`covarianceOrder` and `continuation`, with `draftMutated=false`. Existing
+cancel/delete/Keep/retention rules apply.
+
+MHE alone accepts `windowSize` and `iterations`. It reoptimizes retained
+samples and folds evicted samples into an arrival EKF once. Its differentiable
+reduced normal solve preserves measurement/prior VJP and JVP even at zero
+innovation. Keep the selected reduction and window bounded: information-matrix
+storage grows quadratically in their product. Fixed iterations do not guarantee
+nonlinear convergence or identifiability.
+
+The native model uses frozen-inlet linearly implicit Euler for selected scalar
+thermal states and one node mixing sweep. Unselected states stay at model
+defaults. It does not assimilate a whole 2D/3D grid or replay Hall load/fault/PID
+schedules. Use `run_analysis` with Engine callbacks for a different reduction.
+
+### Opt-in momentum and pump coast-down
+
+Set `config.inertialHydraulics=true` or
+`config.solver.inertial_hydraulics=true` through `configure_scenario`,
+`run_simulation` or Hall analysis inputs. Top-level `inertial_hydraulics`
+and solver `inertialHydraulics` are accepted aliases. Omission/false retains
+quasi-steady hydraulics. Normalized configs round-trip through named tools.
+A `configure_scenario(solver={inertial_hydraulics:true|false})` patch reconciles
+the inherited top-level mirror on draft or `sourceRunId` inputs; contradictory
+switches submitted together in one full config fail.
+
+Use `model.componentParameters=[{entity:EDGE,parameters:{...}}]` for:
+- Pipe `fluid_inductance` (alias `inertance`), nonnegative Pa s²/m³;
+  omission derives `rho*length/area`, while zero opts out of physical pipe
+  inertance (the DAE still applies its minimum regularization).
+- Pump `rotor_inertia` (alias `J_pump`), nonnegative kg m²; positive values
+  enable rotor dynamics. Also supported: nonnegative `friction_torque_coeff`,
+  `k_tau`, `c_tau`, finite scalar `drive_torque`, and positive
+  `torque_flow_smoothing`. Do not submit both spellings of an alias pair.
+
+With default feed-forward drive, a zero rpm command (`N=0`) cuts motor drive
+without resetting the rotor state. An explicit `drive_torque` overrides speed
+commands; set it to zero to trip that drive. Same-time editor overrides preserve accepted inertial
+flow/rotor state; later advances integrate coast-down. The 2D/3D editor uses
+`simulationConfig.inertialHydraulics`. The dense reference DAE uses implicit
+Euler with strict residual acceptance and advances momentum every outer/control
+interval; hydraulic solve-interval caching is inapplicable. It targets bounded
+coast-down/switchover studies, with illustrative torque/curve parameters rather
+than OEM validation. It does not add acoustic water-hammer or compressible
+pressure-wave physics.
+
 ## Model and physical scope
 
 For DSX coverage, read `simulationScope.status` and `resultAvailable` from `get_hall.facility`, saved `inputs` or the displayed scene. Planned coverage is not a completed calculation. `detailSimulationScope` describes the visible DU independently of the configured/saved facility calculation. Analyses without inherited builtin results report `unavailable`; explicitly published fields remain individually sourced.

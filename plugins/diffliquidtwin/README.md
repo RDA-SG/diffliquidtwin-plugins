@@ -13,6 +13,13 @@ not the plugin version. Existing default DSX behavior remains unchanged.
 See the [skill contract](skills/diffliquidtwin/SKILL.md#wave-4a-tools-and-opt-in-physics)
 for submission, retrieval, assumptions and paired Engine compatibility gaps.
 
+Wave 4B support in the same `0.3.0` client package documents Platform/Engine
+`0.8.0`: `assimilate_states` for EKF/MHE streaming or batch state/parameter
+estimation, and opt-in `inertialHydraulics` for pipe momentum and pump rotor
+coast-down. See [Wave 4B usage and limits](skills/diffliquidtwin/SKILL.md#wave-4b-assimilation-and-inertial-hydraulics).
+The connected service must advertise these tools and controls; plugin
+installation alone does not enable them.
+
 ## Install
 
 Add [RDA-SG/diffliquidtwin-plugins](https://github.com/RDA-SG/diffliquidtwin-plugins) as a marketplace in Codex and install **RDA Cooling Lab**. Complete Casdoor sign-in with an authorized account. Anyone may install; service access requires authorization. See [installation and sign-in](GETTING_STARTED.md).
