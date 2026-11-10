@@ -24,7 +24,8 @@ write or job submission.
 Keep current inputs, displayed immutable results and camera independent. Read
 revisions before editing, reconcile conflicts and preserve newer user edits.
 Use explicit sceneId for a current ordinary scene and sourceRunId for a deliberate
-saved-run variant. Displaying a result does not replace current settings or pick
+saved-run variant. A Python analysis needs its original execution code; a source
+ID alone cannot repeat arbitrary analysis controls. Displaying a result does not replace current settings or pick
 the next Run inputs. Reopening a panel does not authorize another computation.
 
 ## Build and run ordinary scenes

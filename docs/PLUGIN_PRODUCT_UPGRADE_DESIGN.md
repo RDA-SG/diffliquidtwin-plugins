@@ -1,7 +1,8 @@
 # Plugin and product upgrade design for the ordinary-simulation release
 
-Status: revised proposal. Design only: no product implementation, version bump,
-publication, deployment or full-gradient study is authorized by this document.
+Status: reviewed design; implementation was separately authorized and is in
+progress. This document itself does not authorize publication, deployment or
+full-gradient studies.
 Proposed pairing: Plugins 0.3.1 with the unreleased Engine/Platform 0.10.0
 candidate. Version 1.0 requires an explicit user request.
 
@@ -455,8 +456,8 @@ proof, physical-model expansion, GPU, gradient repair and production cutover.
 Three read-only Larva reviews were completed: frontend-engineer, senior-engineer
 and tech-cofounder. All requested design revision; none establishes runtime
 acceptance. The parent checked the cited source seams and revised this proposal.
-It has not been resubmitted as a final unanimous approval. Product implementation
-remains unstarted.
+It has not been resubmitted as a final unanimous approval. Implementation is proceeding under the subsequent user request; installed and
+native acceptance remain separate gates.
 
 | Reviewer | Finding | Parent decision and revision |
 | --- | --- | --- |
