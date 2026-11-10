@@ -24,8 +24,9 @@ New experiments use the service's automatic Engine method selection. An automati
 
 The [ordinary-simulation upgrade design](docs/PLUGIN_PRODUCT_UPGRADE_DESIGN.md)
 records the implemented Plugin, MCP and UI work for the unreleased 0.10.0 service
-candidate, including independent review and the remaining native-host release
-gate. The hosted service has not been upgraded by this work.
+candidate, including independent review and completed supported native-host
+acceptance. Automatic host remount remains unqualified; explicit same-session
+reopening was verified. The hosted service has not been upgraded by this work.
 
 For Claude or another harness, follow the [harness development guide](HARNESS_DEVELOPMENT.md). The server publishes the shared frontend and current tool schemas.
 
