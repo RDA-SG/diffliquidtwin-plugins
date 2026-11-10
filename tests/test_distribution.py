@@ -42,7 +42,7 @@ def test_marketplaces_resolve_the_thin_codex_plugin():
         assert (base / entry['source']['path']).resolve() == PLUGIN
     manifest = json.loads((PLUGIN / '.codex-plugin/plugin.json').read_text())
     assert manifest['name'] == 'diffliquidtwin'
-    assert manifest['version'] == '0.3.0'
+    assert manifest['version'] == '0.3.1'
     assert (PLUGIN / 'skills/diffliquidtwin/SKILL.md').is_file()
     for field in ('logo', 'logoDark', 'composerIcon', 'composerIconDark'):
         assert (PLUGIN / manifest['interface'][field]).is_file()

@@ -1,398 +1,130 @@
 ---
 name: diffliquidtwin
-description: Build parameterized or freely composed liquid-cooling scenes, control linked 3D views, and explore backend simulations and Python analyses through queryable saved results.
+description: Build liquid-cooling scenes, run supported simulations, and inspect saved numerical results in linked 3D views and charts through RDA Cooling Lab.
 ---
 
-# RDA Cooling Lab concept prototype
-
-Use `open_hall` to open the native MCP App beside the existing Codex conversation. Retain its returned `sessionId` and pass it in every stateful tool call. A new call without IDs creates an independent workspace and session; do not open a new experiment merely to refresh one already bound in this conversation. Use `open_hall(sessionId=...)` to resume it. The plugin shares the investigation between conversation, model, saved results and interactive scene. Modeling requests belong to this conversation; the panel has no second chat box or manual attachment step. A localhost preview does not prove native panel acceptance.
-
-When another panel takes over the same session, the previous panel offers explicit recovery and lets the user copy unsubmitted edits before restoring the saved view.
-
-Use `list_workspaces` to discover saved experiments. `open_hall(workspaceId=...)` creates a new read-only session with independent view/context. Use `open_hall(sourceWorkspaceId=...)` to continue with copied inputs in a writable workspace, without copying historical results. When continuing a known custom scene, also pass `sourceSceneId` from that source workspace to open the copied scene in model mode; omission opens the Hall draft. `sourceSceneId` requires `sourceWorkspaceId` and cannot accompany `sessionId` or `workspaceId`. Never infer it from another session's last view. Missing source scenes fail before creating a workspace or session. Sessions route requests within the shared team service; a session ID identifies application state and grants no separate user permissions. Missing session IDs fail explicitly. Never substitute a global last session or infer a chat from the MCP connection. A panel without host-replayed binding must use its explicit create/reopen entry before reading or reporting state.
-
-The plugin connects to the remote MCP service declared in `.mcp.json`. The host manages Casdoor OAuth login, token storage and refresh; the frontend contains no credentials. Sign-in grants access to the shared team experiments. See [installation and sign-in instructions](../../GETTING_STARTED.md). Do not put credentials in tool calls, chat, or repository files. OAuth identity, the MCP connection and the application's session IDs have separate lifetimes; reconnecting does not select a different experiment.
-
-
-## Shared editing and recovery
-
-Read `get_hall.draftRevision` before editing shared inputs and pass it as `expectedDraftRevision` to create/configure/bind/run operations. Scene updates accept `expectedRevision` from `get_scene`. A `revision_conflict` preserves current inputs; read the latest draft, reconcile the intended change, and retry deliberately. Do not silently repeat an old full configuration over newer human edits. Human forms preserve unsaved values and offer explicit reload after external changes.
-
-Before asking for a restart or new card, inspect `get_hall.panelStatus`: it summarizes viewer identity, freshness, requested/applied sequence, and expected/actual build identity. `applied` confirms the panel's reported state, not a screenshot. Missing build identity is unknown. Queries and simulations can work while no panel is mounted. Resume the same `sessionId`; do not create another experiment to recover the display. On uncertain simulation submission, inspect the existing runs before submitting again.
-
-The current panel reports `context.dataAvailability` for unavailable observations. Explain its reason instead of treating missing data as zero. Build/version mismatch, unsupported model objects and absent samples are distinct conditions. Preserve human camera, selection and unsaved inputs during recovery.
-
-## Retain and clean experiments
-
-New experiments and runs are temporary. Use `get_storage_status(sessionId)` to
-read the bound workspace's retention, storage and backend capacity. Lists and
-background polling do not extend retention. Use `set_retention(sessionId,
-kept=true,runId=...)` for a useful result, `artifactId` for a saved explanation, or
-omit both IDs to retain current workspace inputs and selected result/explanation
-dependencies. Later trial runs remain temporary. Release retention with
-`kept=false`. Keep does not duplicate data or reduce interactive result quality.
-
-For cleanup, call `cleanup_workspace(sessionId,dryRun=true)` and inspect the
-candidateRunIds, reclaim estimate and protected reasons. Execute that exact
-candidate set with `dryRun=false`; never expand an ordinary cleanup request to
-other team workspaces. Poll/list requests must not be used to keep data alive.
-Explicit manual selections may set `expiredOnly=false`; deleting kept content
-requires explicit human scope and `includeKept=true`. Cleanup never implicitly
-cancels queued or running jobs. Cancel named jobs and wait for worker quiescence
-only when that cancellation is authorized. Report actual freedBytes separately
-from estimated reclaimable space because snapshots may share hardlinks.
-
-Deletion reconciles associated views. If a source is unavailable, explain that
-state and return to the draft or let the human choose another result; never
-silently substitute another saved simulation. Closing the panel or session does
-not delete results. Authenticated team access is not private user ownership.
-
-## Vera Rubin starter
-
-When the human chooses the listing's approximately 10 MW Vera Rubin example, carry out one compact investigation:
-
-1. Read `describe_hall`, open the experiment with `open_hall`, and read `get_hall(sessionId).starterModel`. Build a DSX reference room with one hall, one DU, four SUs, fourteen GPU racks per SU and eighteen compute trays per rack. Open the 3D model preview. Set model `parameters.baseKW=180` and scenario `basis="it"`, with `baseKW=180`, for an explicitly assumed 180 kW IT per GPU rack: 56 × 180 kW = 10.08 MW. Verify the saved inputs before reporting this scale. This is GPU IT load, not total facility power or liquid heat.
-2. Configure one short changing-load scenario, using the actual supported rules and supply events. Keep its load assumptions visible. Run one simulation and wait for completion; use saved samples for the analysis.
-3. Show a scene trend, identify temperature and flow hotspots, then guide the camera from the room to a relevant rack and cold plate. Use inspection and a component-linked trend where useful; let the human continue through the same selection and time controls.
-4. Explain the transient with sourced chart or Markdown content and a small number of linked observations. Keep one displayed result and distinguish simulated GPU cooling from solved shared TCS/CDUs, prescribed primary conditions and reference air equipment. This starter demonstrates existing mechanisms; it does not constrain other user scenarios.
-
-## Read, compose, explore, present
-
-- Use `describe_hall` when choosing unfamiliar controls. Its schemas, units, limits and semantics describe actual supported inputs. Rules, connector states and supply events compose freely; recipes are optional starting points. Use component descriptors for supported component parameters and `run_analysis` for advanced Python APIs. Unsupported fields are rejected; never assume an unreported input affected the solver.
-- `get_hall` reads the draft, compact simulation metadata, requested `view` and separately UI-reported `context`. `get_hall(runId,includeEntities=true)` also returns the saved immutable model/scenario, event preview and racks/nodes/edges with IDs and relationships. Choose this source when changing a displayed or named run. Preserve unspecified input fields and events. Historical models missing `layoutProfile` mean schematic.
-- `list_simulations(query?,status?,limit=50,offset=0)` lists newest first and returns `runs`, filtered `total`, `limit`, `offset` and `hasMore`. Search ID, simulation/model name or layout profile; status is one of `queued`, `running`, `complete`, `failed`, `cancelled`, `interrupted`. Limit is 1–200 and offset is nonnegative. Rows contain ID, name, creation time, status/progress/message, `sourceRunId`, duration/time step and model geometry counts, rather than full input snapshots. Full inputs are readable for every existing job status, including failed/cancelled/interrupted trials. Retrieve them with `get_hall(runId)` and open a completed result with `focus_hall(runId=...)`.
-- `create_hall` patches the draft model: unspecified parameters, name and component overrides remain, except an incompatible existing rack pitch is adjusted when changing layout without an explicit pitch. Schematic spacing is 1.2–3 m, Vera Rubin NVL72 is 0.6–3 m, and DSX is exactly 0.6 m; explicit invalid pitches are rejected. It regenerates geometry and resets the draft scenario while retaining historical runs. `componentParameters=[{entity,parameters}]` edits supported numerical component parameters; an explicit empty list clears overrides. Read descriptors for exact IDs, supported names and units. `configure_scenario` accepts complete matching model/config, a `sourceRunId`, or a recipe. A changed model geometry requires a matching config. Without a recipe, duration/dt/recordIntervalS and `solver` patch the current or `sourceRunId` inputs. A `solver` patch merges named shared options while preserving other solver settings and their provenance; with a recipe, it overrides the recipe's resolved defaults. Do not combine these top-level convenience patches with a complete config. New scenarios use Engine `solver.method="auto"` and `solver.max_thermal_step_s=null`. Auto selects a compatible tolerance-controlled method from the assembled model and AD context. A null cap delegates the upper bound to the Engine for that method and held-input interval; a positive finite value sets an explicit cap, which component constraints may shorten. Explicit methods and caps remain authoritative. Outer dt, control sampling and result sampling are independent; a thermal cap alone does not establish a global accuracy guarantee. Read the shared schema and inspect effective settings and executed substeps with `get_hall(includeConfiguration=true)`. `validateOnly=true` returns normalized inputs and actual event preview without mutation. Applying model/config validates them together. Only model or restore when the human requests modeling or restoration; do not start an unsolicited simulation.
-- `run_simulation(model?,config?,sourceRunId?,show?)` submits an immutable experiment. Explicit inputs default to `show=false`, preserving the user's draft and current investigation. Use independent submissions for searches, variants and sensitivity exploration. `sourceRunId` records provenance; each derived run stores its own complete inputs and results, which survive deletion of its source. A no-argument run uses the draft and displays progress. Simulation and analysis share a bounded team queue. Each workspace runs at most one job; independent workspaces can run concurrently up to the backend slot limit. Check the exact returned job ID until it reaches a terminal status; `queued` is not completion. Read scheduler occupancy and queue position from the returned metadata. Use `cancel_simulation` for a specified job within this session’s workspace. Failure/cancellation is not a result.
-- `delete_simulation(runId)` permanently removes one inactive simulation's record, saved inputs and results, returning `deletedRunId`, updated `view` and `workspace`. Cancel an active job separately and verify its worker has stopped before deleting; cancellation alone retains the record. Deleting the displayed run returns to the draft without selecting another result. Related findings and stale reported context are cleared. Draft inputs and independent derived runs remain. Identify the requested run by its ID and saved metadata before deletion.
-- `query_results` reads saved samples by run, entities/racks, metrics, time/window and sample/series/max/min/mean. Use its scope, units, sampled times, validity and evidence locations. Windows include endpoints. Extrema and means use saved samples. Read sampling.integrationDtS/recordIntervalS and each row’s evidence.samplingBasis; run.rackPeaks/plateRangeC retain separate integration-step peak summaries. Published fields use their declared sample axes. Check `truncated`, `totalRows`, `offset` and `hasMore`; continue with limit/offset or narrow the scope instead of treating truncated output as complete. A non-sample aggregate uses window, not time. Custom metric IDs come from the saved result field descriptors. Invalid pressure/temperature stays null; disconnected branch flow is zero. `inspect_entity` offers a compact rack/tray inspection. Tray quantities apply to its cold-plate branch, rather than the whole rack.
-- `focus_hall` controls the same panel: one run, primary object or entity set, time/window, field, camera, modelDisplay, visibility, filters and annotations. `modelDisplay=equipment` shows intact equipment; `cooling` keeps complete cooling-device assemblies and exposes load cooling hardware. `inspectionTarget` independently requests a camera-aware view of one exact spatial object; null exits. Inspect temporarily removes major blockers between the camera and target and recalculates them when the camera moves. It leaves explicit visibility, baseline display, selection, camera and solver inputs intact. The legacy `cutaway` value is accepted as an alias for target inspection and is returned as a canonical equipment/cooling baseline plus inspectionTarget. Combine explicit inspection and camera movement when guiding a user. Changes are patches; omitted fields remain. Use `window=null` to clear a window. A run ID implies result mode. Racks use `rack:1`; nodes retain exact `node:<id>` identity. `spatialEntity` selects a physical asset, route, zone or solver object with the same highlight as human selection; it does not move the camera. Use null to clear it. `playback={playing,rate,range}` controls continuous playback; read actual playback/time in context. The range is null or a start/end pair in seconds. A finding binds its label to a real run, entity/rack, time/window and metric. Humans can click findings to return to their evidence and continue asking in the existing conversation.
-- A supplied primary `entity` also replaces the previous `entities` collection with that entity unless the same patch explicitly supplies `entities`. This keeps single-object guidance and reloads on the requested object. Supply both fields to preserve or replace a multi-object selection deliberately.
-- `view.sequence` means the server received a request. Confirm `context.appliedViewSequence` and actual reported selection/time/window/metric before claiming it rendered. UI failure is reported as `context.viewError`. `context.reportedAt` and `viewer.sessionId` identify the last UI observation, not current connectivity; unchanged panels coalesce reports. If no corresponding acknowledgement exists, say the request remains visually unverified.
-
-Use `list_entities(runId?,sceneId?,detailHall?,detailDu?,kinds?,scopeId?,query?,limit?,offset?)` for a filtered spatial catalog. Descriptors include ownership, role, relationships and available numerical parameters/metrics. Follow `hasMore` for pagination.
-
-After changing a DSX population or switching sources, reread the current entity IDs. The panel maps existing selections and object visibility through their physical facility identity; a reused local rack or connector number cannot stand in for a removed object. Missing selections and related isolation clear, while compatible camera coordinates remain independent.
-
-Spatial exploration is composable. Read `get_hall(spatialId=...)` for one object's geometry, type, simulation scope and direct related IDs; an explicit `runId` selects that saved scene. Otherwise lookup uses the primary rendered result or draft. Traverse these IDs as needed instead of fetching the full catalog repeatedly. Facility, zone, asset and physical route IDs can be camera targets even when they have no numerical results.
-
-Use `focus_hall(cameraTarget=...,transitionMs=...,cameraMotion=...)` to frame any known spatial object, or `cameraPose={position:[x,y,z],target:[x,y,z]}` for an exact world-space endpoint in metres. A non-null target or pose clears the other; a camera preset without either clears both. Request movement explicitly with `camera`, `cameraTarget` or `cameraPose`; selection-only changes preserve the spatial camera. Targeting clears inherited filters unless the same patch supplies filters: include the intended filters explicitly to preserve isolation. Explicit poses retain filters.
-
-Orthographic `context.cameraPose` also reports `frameHeight`, the positive full vertical frame height in world metres. Carry it with position/target to restore the same zoom or specify it to control framing; viewport aspect determines horizontal extent. Without it, legacy vector-only poses retain the current orthographic framing. Perspective poses use position/target and do not report this field.
-
-`cameraMotion` is a saved preference: `auto` chooses a route from the operation and spatial relationship, `direct` moves without an intermediate overview, `context` allows pulling back for spatial context, and `instant` applies the endpoint immediately. The default is `auto`; omission preserves the current preference. A policy-only patch starts no movement and changes no selection, time, visibility, filters or camera endpoint. Movement duration is 0–5000 ms; `transitionMs=0` also applies immediately. A requested `cameraPose` stays the exact endpoint under every policy. Continuous inspection of isolated equipment should retain an appropriate inspection direction and scale. The normal UI chooses its path automatically; explicit policies let an agent guide other explorations without a fixed tour.
-
-Read `context.cameraPose`, `context.cameraTransition.active/status/sequence/reason`, `context.appliedViewSequence` and `viewError` after moving. Actual context distinguishes active motion, arrival and interruption; a stored request is not proof of arrival. A user drag interrupts movement as normal interaction, with no success acknowledgement and no `viewError`; read the actual pose before guiding another move. Camera movement does not change solver selection, time or metric.
-
-Use `focus_hall(visibility={hiddenIds:[...],hiddenKinds:[...],hiddenLayers:[...],scopedLayers:[{scopeId,layers:[...]}]})` for component hiding. Each supplied array replaces its previous array; the omitted counterpart remains. `[]` resets that array, and clearing all four arrays restores explicitly hidden components. `scopedLayers` applies anatomy layers only within its spatial scope, so another rack can keep its complete exterior. Layers are `shell`, `cover`, `chassis`, `internals`, `coldplate`, `structure` and `nvlink`. `hiddenIds` accepts exact cataloged spatial IDs, including solver edges/nodes, racks, pods, physical assets/routes and factory/hall/DU/SU zones. Read `get_hall(spatialId=...)` and check `visibilitySupported`. IDs use the same primary result/job/draft scene as spatial camera targets. A hierarchy scope hides its associated geometry. Explicit unsupported or unavailable IDs fail without applying the patch; inherited unavailable IDs are pruned when the source changes. Visibility changes displayed geometry only, independently of model, solve, selection, metric, time and camera. Confirm actual `context.visibility` and `context.appliedViewSequence` before claiming components disappeared. Display modes and filters still apply when hidden arrays are cleared.
-
-For result inspection, combine `modelDisplay=cooling`, optional `inspectionTarget`, `filters={pod:...,rack:...}`, metric and time/window. The same spatial mechanisms work in model-only scenes, with no fabricated metrics. `context.inspection` reports the actual target and derived blockers; it is separate from user-owned visibility rules. Inspection uses conservative geometry bounds, so curved equipment can be hidden slightly more broadly than its visible surface. All / Loop / Rack in the panel uses the same filters. Numeric inspection leads with the chosen metric, and window rankings use actual samples inside the visible scope. Keep builtin solver quantities and explicitly published observations distinguishable by provenance.
-
-History provides search/status filtering, open and delete actions. Opening history replaces the displayed result using its immutable inputs. Delete uses an inline confirmation. The panel has one active scene and one displayed run; no A/B, baseline or difference state exists. For agent requests, read actual `context` before changing an investigation: human selections and time changes can be newer than the requested `view`. Carry the fields that should be preserved explicitly in a `focus_hall` patch and verify the resulting acknowledgement.
-
-The panel's Inspect, Isolate, Hide and Back actions compose these generic inspection, display, filter, visibility, selection and camera mechanisms. Inspect applies to the action's exact object. While active, an explicit human primary selection retargets inspection to that object; hover alone does not retarget it, and inspection stays off until explicitly enabled. Back restores the previous inspection target along with the view. Agent requests retain the independent target when `inspectionTarget` is omitted. Agents can compose the same mechanisms for other investigations; presets do not limit the supported scenarios. Direct UI inspection and agent-guided exploration share the existing conversation and actual reported scene state.
-
-Inspect retains the selected component's directly connected equipment and pipes, resolving display mappings where needed. It keeps explicit hiding authoritative and removes actual blockers without recursively revealing the cooling circuit.
-
-The panel updates current selection, object set, time window, field, camera, visibility, filters, findings and draft/displayed input distinction in host context automatically. When the human says “here” or “these objects”, use this context. `context.hover` is a temporary probe with object ID, hit `fraction` and world `point`, `time`, run ID and displayed measurements; it does not replace the selected entity or entity set. Pipe temperature follows the hit position and displayed time; cold plates distinguish plate and fluid temperatures. Preserve reported null values and interpolation status. Neutral assets/routes have no builtin solver measurements; explicitly published fields can supply sourced observations. Displayed observations can be interpolated; saved-sample queries provide evidence. Removing the selection attachment in the host pauses sharing until another explicit selection. Do not create another inference runtime or require manual sending/attaching. `updateModelContext`, `sendMessage` and display controls belong to the panel transport; they are not additional model tools.
-
-Planning positions are uninstalled spatial locations, hidden by default. Use `focus_hall(visibility={showReservations:true})` to show their floor outlines; omission preserves the toggle, and `false` hides them. Hidden ID/kind rules still apply. Query `gpu-spare`, `gpu-unpopulated`, `support-reserve` and `future-position` via `list_entities`; read `reservationType`, `occupancy`, `footprint` and `allocationSource` before explaining their purpose. Reference spares and parameterized unpopulated slots have different population provenance. Focus and annotations use the same exact spatial IDs; these positions have no equipment internals or cooling samples.
-
-## Exact and automatic pipe layout
-
-Choose routing per pipe. Omitted `routing` or `routing.mode="exact"` preserves explicit world-space `points`, including VR reference design geometry; bound endpoints alone follow equipment moves. Never reroute reference/manual paths without a corresponding user request. Explicit `routing={"mode":"auto","clearanceM":0.02,"layerHeightsM":[3.2,3.6]}` requires `from` and `to` ports and no `points`. It derives deterministic layered orthogonal paths around equipment and occupied routes. Optional layer heights constrain horizontal core travel; endpoint escapes and vertical access connect to them. Automatic pipes are ordered by highest candidate layer descending, then ID. Surface sockets must depart through an actual outward face; outboard sockets cannot reenter the equipment envelope along their forward ray. Interior sockets retain internal departure semantics. Nonaxis port directions permit short nonorthogonal escape segments. Failure or exhausted search is an error before persistence, never a straight-through fallback.
-
-Exact and automatic pipes can coexist. `get_scene.document` retains canonical intent; `scene.pipeRoutes` contains resolved display points. To freeze an automatic route, explicitly save its resolved points with mode `exact`. To enable automatic routing on a precise pipe, patch `points:null` and mode `auto`; `routing:null` clears the optional settings. Geometry routing never rewrites `solverModel` topology, lengths or heights. Use the live scene schema and returned route metadata when constructing examples. New DSX templates use corrected gallery clearance and matching solver lengths; saved precise results retain their original geometry and require an explicit rebuild/new run to adopt the new template.
-
-## Equipment connections and rack contents
-
-A declared port direction is the outward connector axis. For exact pipe layout, include a short segment along that axis at each bound endpoint before turning parallel to an equipment face. Inspect all connected ends in 3D; coincident endpoint coordinates alone do not prove a convincing equipment connection. Correct illustrative endpoint routing explicitly. Preserve existing reference/manual points unless the human requests changing them.
-
-A generic rack starts as a cabinet and frame. Declare servers, trays and cold plates as child equipment using `parentId` and world-space coordinates; counts in `properties` do not generate anatomy. When no hardware inventory is supplied, identify any illustrative population as an assumption. Use the dedicated VR/DSX profile for its declared compute and NVLink anatomy rather than inferring it from a generic rack's name or size.
-
-
-
-For a continuous illustrative rack circuit, explicitly declare supply/return manifolds and hoses through each server's cold plates. Equipment `properties.internalConnections` declares directed `{from,to}` port links; each requires exactly one matching `internalFlowPaths` entry with `from`, `to`, positive `diameterM`, and owner-local metre `points` whose endpoints equal those ports. These paths render under the owning equipment and follow yaw, Inspect, hiding and bounds. Label exposed cold-plate channels as illustrative; never imply solved flow or temperature. The backend Python helper `prototype.rack_circuit.add_rack_circuits(document, rack_ids)` supports the declared ordinary 4-server / 2-plate-per-server assembly and preserves exterior auto/exact routing intent; use its returned document with `update_scene` rather than inventing hidden connectivity.
-
-## Wave 4A tools and opt-in physics
-
-Plugin `0.3.0` adds references for the following service tools. Discover the
-connected service's schemas before use; installing the plugin does not deploy
-new backend capabilities. All stateful tools require the retained `sessionId`.
-
-| Tool | Engine task | Task-specific options |
-| --- | --- | --- |
-| `calibrate_parameters` | `Calibrator` | `measurements={"flow:EDGE":value,...}`, optional `numSteps` |
-| `optimize_controls` | `ControlOptimizer` | `measurementKey`, `target`, optional `numSteps`, `learningRate`; static setpoints |
-| `optimize_design` | `DesignOptimizer` | `objective={flow:EDGE,target:value}`, optional `numSteps` |
-| `analyze_observability` | `ObservabilityAnalyzer` | `measurementKeys`, optional `mode=hydraulic|coupled` |
-| `design_sensors` | `SensorDesigner` | `candidateIds`, `nSensors`, optional `measurementType`, `mode`, `criterion=D|A|E` |
-
-Each submission requires `options.parameters=[{component,parameter,value,
-bounds:[low,high]}]` with finite ordered scalar bounds. Parameter names are
-Engine attributes (Pipe `d`, Pump `N`), not UI labels. Measurements use exact
-`pressure:NODE`, `temperature:NODE`, `flow:EDGE` keys. Pass `sceneId` with an
-executable `solverModel`, Hall `model/config`, or an immutable `sourceRunId`.
-Hall tasks freeze the initial operating point rather than replaying load/fault
-schedules. Calibration/design use bounded steady objectives; observability and
-sensing use normalized sensitivities. Static control optimization uses the
-submitted duration/dt/solver settings. PID tuning, custom objectives,
-time-dependent schedules and coupled-facility boundary laws use `run_analysis`.
-
-These tools queue through the same `JobScheduler` as simulations. Retain the
-returned job ID and poll `get_task_result(sessionId,jobId)` until terminal;
-`result` is null while queued/running. The equivalent App action is
-`hall_api(action="task_result",args={jobId})`; submission action names match
-the five tools above. Report failure messages as failures. Completed results
-contain the Engine class, numerical result and private parameter-store values,
-with `draftMutated=false`. Undefined infinite condition numbers/scores use null.
-They never apply optimized values to the draft. Read-only sessions may retrieve
-results but cannot submit/cancel jobs. Existing cancel/delete/Keep/cleanup and
-bounded retention rules apply; polling does not extend retention. These JSON
-results have no trajectory frames; do not open them with `focus_hall(runId)`.
-`get_hall(runId)` exposes the request and result separately from simulation data.
-
-Hall/2D schemas expose `cooling_tower`, `cold_plate_2d`, `cold_plate_3d`,
-`check_valve`, `dpcv`, `picv`, `expansion_tank`; Pipe `Q_wall_loss`, `UA_amb`,
-`T_amb`, `T_fluid_init`, `K_minor`, `outlet_diameter`; pump `eta_max`, `eta_min`,
-`alpha_eff`, `q_bep_fraction`; valve `linear`/`eqperc`/`quick`, explicit leakage
-and smoothing; and flow-dependent HTC with `flow_dependent_htc`,
-`htc_reference_mdot` (plates), `htc_hydraulic_diameter`, `htc_flow_area`.
-Temperature boundary mappings retain `temperature_bc`. Engine validates liquid
-continuity, geometry and actual constructor inputs. The paired Engine supports
-`water` and `dowfrost-lc25`. It does **not** accept generic `pg25`, `eg30`,
-`Re_ref`, `Re_0`, `n_re`, or `Q_bep_ref`; do not promise those controls or alias
-generic glycol formulations to a named volume-percent product. PG25 HX inertia
-remains quasi-steady until Engine supports that dynamic law.
-
-Optional scenario `traySubmodels=[{rack:1,tray:1,type:"cold_plate_2d",
-parameters:{Nx:4,Ny:4}}]` (or 3D with `Nz`) preserves field states only on chosen
-trays. Viewer plate values show the hottest solid cell. Other trays stay 0D;
-the lumped energy ledger is unavailable for mixed field models.
-
-Read `run.safetyEnvelope` and `run.alerts` for sampled MAWP, high-point vacuum,
-pump NPSHa/NPSHr, pipe velocity and rack minimum-differential-pressure checks.
-Reports include worst margin/entity/time and explicit unit-bearing extrema.
-Facility roots cover all solved DUs; coupled detail bundles retain the full
-accepted-step report with `scope=coupled-facility`, even when frames are decimated.
-Exactly isolated pressure-gauge nodes are omitted from absolute-pressure checks
-and reported as incomplete coverage. Actual viewer context reports
-`safetyEnvelope` and `safetyAlerts`; these are saved diagnostics, not proof of
-continuous-time or OEM safety. Scenario `safetyLimits` can set `mawpPa`,
-`vacuumMarginPa`, `pumpInletDiameterM`, `npshrM`, `maxVelocityMps`, `minRackDpPa`.
-Defaults are explicitly illustrative and require qualified site limits before
-safety decisions.
-
-Keep default `dsx-v2` six-running/one-isolated-standby behavior unchanged unless
-fault/control modeling is requested. `dsxControls:true`, or explicit
-`controlEvents`, inserts CDU CheckValves, rack LK-01 supply/return isolation,
-row LK-02 supply/return isolation, rack PICV (`DH-07`) and SU lumped DPCVs. Read exact
-IDs and row mappings from saved scene `dsxDevices`; visual control relationships
-remain reference evidence rather than telemetry. Curves and staging are
-illustrative, not OEM SOO validation. CheckValve permits its declared tiny
-reverse leakage; never claim mathematically zero reverse flow.
-
-Events are ordered, dt-aligned objects with `time` and `kind`:
-`pump-trip` requires `cdu=1..7` and automatically cuts in `cdu7` unless
-`automaticStandby:false`; `standby-cut-in` starts it explicitly; `pump-speed`
-uses `cdu/value` rpm. A trip remains latched. `LK-01` uses `rack`, `LK-02` uses
-`rowId`; both latch until explicit `reset` for that row. `DH-07` uses rack and
-opening `value` in [0,1]; `DPCV` uses a positive Pa setpoint `value`. The standby
-primary valve holds the declared .4 opening after cut-in without borrowing a
-running CDU's PID state. LK-02 commands actual served rack supply/return branch valves and
-does not claim an unsolved reference row route changed its pipe geometry.
-
-For DSX `solveScope=facility`, optional `sharedPrimaryLoop:true` couples all DU
-primary branches through one finite-head water plant and geometry-length pipes.
-Secondary PG25 domains remain separate. Inspect `partitionExecution.mode`:
-`coupled-primary` uses one simultaneous network solve, while the default keeps
-independent DUs and optional `partitionWorkers`. Lazy detail bundles project
-that shared solve without rerunning; each saved `model.json` and execution
-report retains the full coupled topology. Fixed plant return pressure and
-37 C temperature still idealize heat rejection; no chiller/tower capacity is
-inferred. Local events apply to the submitted detail DU.
-
-Custom scenes can opt in to `solverExport={fluid:"water",boundaryConditions:[...]}`.
-Boundaries address `equipmentId:portId`; at least one pressure reference is
-required. Resolved automatic/exact `pipe_routing` geometry exports length,
-elevation and diameter. Explicit `rack_circuit` paths preserve series/parallel
-cold plates and manifold paths, without introducing shell bypasses. Device
-`properties.solver={type?,params,fluid?}` supplies constitutive inputs, and
-Engine defaults remain assumptions. Geometry crossings do not create junctions.
-The attached `solverModel` regenerates on edits and can run through analysis or
-a differentiable task. Geometry alone does not calibrate device behavior.
-
-## Wave 4B assimilation and inertial hydraulics
-
-Plugin `0.3.0` documents the paired Platform `0.8.0` / Engine `0.8.0`
-interfaces. Discover the connected service's schemas before submitting; older
-`0.7.0` Engine wheels lack these estimation classes.
-
-### Online state and parameter assimilation
-
-Use `assimilate_states(sessionId, options, sceneId?|model?|config?|sourceRunId?, asynchronous?)`
-or `hall_api(action="assimilate_states", args={options,...})`.
-Choose an executable Hall model, a scene with a `solverModel`, or immutable
-saved-run inputs. Read-only sessions can retrieve completed results but cannot
-submit assimilation. Estimates never mutate the draft.
-
-Set `options.method="ekf"|"mhe"`. Each selected scalar state requires
-`{key,value,variance,processNoise,scale}`; keys are `temperature:NODE`
-or `ode_state:COMPONENT.STATE`. Each bounded parameter requires
-`{component,parameter,value,bounds:[low,high],variance,processNoise,scale}`,
-using Engine attribute names and a prior strictly inside the bounds. Use at
-most 32 joint states/parameters. Covariance order follows states then parameters.
-
-Declare positive SI variances in `measurementNoise`, keyed by exact
-`temperature:NODE`, `pressure:NODE`, `flow:EDGE` or scalar ODE-state keys.
-State/parameter `variance` is an SI variance; `processNoise` is an SI
-variance rate per second. Supply positive characteristic SI `scale` values
-and optional `measurementScales` for conditioning. These are not standard
-deviations. Bounded parameters use smooth latent coordinates internally.
-
-For streaming, submit `measurements={channel:value,...}` and optional positive
-`dt`; the default is synchronous execution with a direct JSON result. Omit
-missing channels instead of sending zero or null; an empty object predicts
-without measurements. Feed `result.continuation` into the next
-`options.continuation` with unchanged model, parameter/state order, scales and
-noise policy. Retain the returned continuation explicitly; no opaque shared
-estimator is kept by the service.
-
-For a batch, use `trajectory=[{measurements:{...},dt:...},...]` instead of
-`measurements`/`dt`. Batch defaults to a queued job. `asynchronous` selects
-the mode explicitly for either shape. Poll `get_task_result(sessionId,jobId)`;
-terminal failures remain failures. Results report `posterior`, `estimates`,
-`covarianceOrder` and `continuation`, with `draftMutated=false`. Existing
-cancel/delete/Keep/retention rules apply.
-
-MHE alone accepts `windowSize` and `iterations`. It reoptimizes retained
-samples and folds evicted samples into an arrival EKF once. Its differentiable
-reduced normal solve preserves measurement/prior VJP and JVP even at zero
-innovation. Keep the selected reduction and window bounded: information-matrix
-storage grows quadratically in their product. Fixed iterations do not guarantee
-nonlinear convergence or identifiability.
-
-The native model uses frozen-inlet linearly implicit Euler for selected scalar
-thermal states and one node mixing sweep. Unselected states stay at model
-defaults. It does not assimilate a whole 2D/3D grid or replay Hall load/fault/PID
-schedules. Use `run_analysis` with Engine callbacks for a different reduction.
-
-### Opt-in momentum and pump coast-down
-
-Set `config.inertialHydraulics=true` or
-`config.solver.inertial_hydraulics=true` through `configure_scenario`,
-`run_simulation` or Hall analysis inputs. Top-level `inertial_hydraulics`
-and solver `inertialHydraulics` are accepted aliases. Omission/false retains
-quasi-steady hydraulics. Normalized configs round-trip through named tools.
-A `configure_scenario(solver={inertial_hydraulics:true|false})` patch reconciles
-the inherited top-level mirror on draft or `sourceRunId` inputs; contradictory
-switches submitted together in one full config fail.
-
-Use `model.componentParameters=[{entity:EDGE,parameters:{...}}]` for:
-- Pipe `fluid_inductance` (alias `inertance`), nonnegative Pa s²/m³;
-  omission derives `rho*length/area`, while zero opts out of physical pipe
-  inertance (the DAE still applies its minimum regularization).
-- Pump `rotor_inertia` (alias `J_pump`), nonnegative kg m²; positive values
-  enable rotor dynamics. Also supported: nonnegative `friction_torque_coeff`,
-  `k_tau`, `c_tau`, finite scalar `drive_torque`, and positive
-  `torque_flow_smoothing`. Do not submit both spellings of an alias pair.
-
-With default feed-forward drive, a zero rpm command (`N=0`) cuts motor drive
-without resetting the rotor state. An explicit `drive_torque` overrides speed
-commands; set it to zero to trip that drive. Same-time editor overrides preserve accepted inertial
-flow/rotor state; later advances integrate coast-down. The 2D/3D editor uses
-`simulationConfig.inertialHydraulics`. The dense reference DAE uses implicit
-Euler with strict residual acceptance and advances momentum every outer/control
-interval; hydraulic solve-interval caching is inapplicable. It targets bounded
-coast-down/switchover studies, with illustrative torque/curve parameters rather
-than OEM validation. It does not add acoustic water-hammer or compressible
-pressure-wave physics.
-
-## Model and physical scope
-
-For DSX coverage, read `simulationScope.status` and `resultAvailable` from `get_hall.facility`, saved `inputs` or the displayed scene. Planned coverage is not a completed calculation. `detailSimulationScope` describes the visible DU independently of the configured/saved facility calculation. Analyses without inherited builtin results report `unavailable`; explicitly published fields remain individually sourced.
-
-The template includes rack EV/controllers and instruments, rack/row isolation and leak detectors, and header-end minimum-flow bypasses. Their `controlRelationships` describe reference SOO behavior, with `simulationSupport` declaring what is implemented; normal valve state is a design annotation, not telemetry. Use physical `related.connections` and `flowConnections` for fluid neighbors, keeping control signals separate. Read source conflicts before inferring capacities, fluid choice or diameter transitions. `dsxCommissioning:true` adds temporary flushing/filling air separators; the default omits them.
-
-Independent scenes use `cooling-scene/v1` and do not require VR, parameterized generation, racks, a facility container or a simulation. Use `create_scene(scene?,sourceSceneId?,name?,show=true)` to create/copy, `list_scenes` to discover, `get_scene(sceneId)` to read, `update_scene(sceneId,patch,removeIds?)` to edit and `delete_scene(sceneId)` to remove. The Library opens scenes and results. `focus_hall(sceneId)` opens the saved geometry; `sceneId:null` returns to the parameterized Hall draft. Scene deletion preserves copied scenes and independent analysis runs.
-
-Read `describe_hall.sceneSchema` and `scenePatchSchema` before composing unfamiliar geometry. Equipment has exact IDs, free-string kinds, world-space position/dimensions in metres, yaw `rotationY` in radians and local-space declared ports. Pipes reference `{equipmentId,portId}` endpoints or explicit world-space points. Endpoints replace the first/last route points and follow equipment/port changes; intermediate route points remain. `circuit` and `side` independently identify a loop and supply/return role. Groups and `parentId` describe ownership; child coordinates remain world-space. `update_scene` upserts partial equipment/pipes/groups records by ID, preserving omitted records/fields. Arrays within a record and `properties` replace that field. `removeIds` removes incident pipes when equipment is removed, and detaches children from removed groups. Nullable relations in patches clear those relations. Kinds outside the procedural families use neutral equipment geometry. Generic racks never implicitly receive VR anatomy.
-
-Use `list_entities(sceneId=...)` to inspect a scene without opening it; do not combine sceneId and runId. Exact generic IDs work with spatialEntity, cameraTarget, hiddenIds, hiddenKinds and group scopes. Pure geometry has no builtin measurements. An optional core flat V3 `solverModel` can be attached by editing the scene. `run_analysis(sceneId,code,config?)` takes immutable snapshots of the scene and graph; config for a generic scene contains name/duration/dt. `ctx.topology()` needs that numerical model, while visual-only analysis can inspect geometry and publish sourced fields. Numerical execution remains explicit. Source analyses retain their saved graph and spatial mapping unless model is explicitly replaced. A chiller silhouette does not implement a refrigeration model. Selection context includes actual published measurements with their sampled time and provenance.
-
-A fresh workspace starts with one hall, one DU, four SUs, fourteen populated GPU racks per SU, eighteen compute trays per rack, 150 kW IT per rack and 41 °C initial fluid temperature. Shared TCS supply temperature is solved. Its English name is `Vera Rubin · DSX Deployment Unit`. The DU includes 56 GPU and 32 support cabinets, spare/future positions, eight HACs, seven CDUs, seven series-connected buffer tanks, an expansion tank, five CRAHs, TCS/HTFW/MTFW routes, return-air ducts, co-located telecom trays and eight cooling BAS field panels. Scene scope includes cooling, IT loads and structures/services sharing their data hall or gallery. Power distribution equipment, power cable trays and separate electrical rooms are excluded. It opens in Equipment/model preview with no isolation or hidden components; no simulation starts automatically. `get_hall.starterModel` provides the canonical inputs used by the VR · 1 DU preset. Existing saved workspaces and runs retain their own inputs. Six running CDU branches and buffers participate in the shared TCS; the seventh is isolated. Primary hydraulics and air cooling remain outside the model.
-
-Use `layoutProfile=dsx-v2` for the supplied DSX V2 reference. Factory size is `dsxHallCount` (1–8) × `dsxDuPerHall` (1–6) × four SUs; `dsxDetailHall` and `dsxDetailDu` choose the initially detailed DU. New DSX scenarios use `solveScope=facility`: one job solves each DU's shared TCS independently and saves lazy detail bundles plus a facility summary. `solveScope=detail` keeps one-DU computation; historic snapshots missing this field remain detail runs. Read the saved run's actual coverage before interpreting it. Set `cduCount=4`: this historical field denotes four SU load groups within one shared secondary network per DU. The network contains six running CDUs and one isolated standby. `racksPerCdu` is populated GPU racks per SU (default 14; 16 provisioned positions), and `rackPitch=.6` is the planning grid. Four halls × six DUs gives 96 SUs; eight halls × four DUs gives 128 SUs. Stable facility rack/tray IDs distinguish identical local rack numbers across DUs. Use explicit detail selection to load another computed DU without editing the draft or rerunning. `focus_hall(camera=factory)` shows the whole geometry. Default facility coverage keeps independent prescribed-head primary branches; explicit `sharedPrimaryLoop:true` adds coupled primary hydraulics. Air physics remains excluded.
-
-`get_hall`, `list_entities`, `inspect_entity` and `query_results` accept detailHall/detailDu for saved detail; `focus_hall(runId,detailHall,detailDu)` opens it. Stable global IDs such as `h1:du2:su1:west:gpu1:tray1:coldplate` route queries to the correct partition; entity/cameraTarget/inspectionTarget/spatialEntity can use those mapped identities. Legacy local IDs refer to the original DU unless detail is explicit. A query with no entity selection covers all solved DUs; follow its global pagination. Local rack/pod/tray rules and connector events affect the original detailed DU, while all scope applies across the facility. Local component overrides also belong to the submitted detailed DU; qualified TCS component IDs belong to their named DU. Use global load-source bindings for explicit cross-DU loads.
-
-DSX placement uses Basis of Design Rev 5 and issued mechanical/architectural PDFs: four SU strips per DU, inline compute/support HACs, 14 populated + 2 spare GPU positions, 16 support + 32 future positions per SU, rear-facing hot aisles and perpendicular mechanical galleries. The 5 ft 6 in clear hot aisle differs from the nominal 8 ft HAC frame. Header elevations, cabinet height, repeated hall spacing and solver coefficients remain assumptions. The physical 6+1 CDU population defaults to six-running/one-standby operation; explicit Wave 4A controls can stage the standby and simulate faults. The 2.3 MW reference rating is not calibrated simulated capacity. Neither these illustrative interlocks nor the fluid law qualifies OEM redundancy, PG25 performance, TES or plant capacity. Keep these limits visible when interpreting results. Use English fixed model names; UI language remains independent.
-
-Detailed equipment uses distinct procedural geometry for cooling and control equipment. `facility.equipmentInventory`, `referenceSources` and `populationNotes` expose counts, source pages and scope. `list_entities` returns source references, ratings, geometry/orientation, ownership and related connections for exact IDs; use those relationships to discover, focus, hide and explore equipment without a fixed workflow. `focus_hall(visibility={hiddenKinds:["cdu","air-duct"]})` hides complete equipment classes using exact `type` values returned by `list_entities`, without enumerating IDs. The rules persist across parameterized rebuilds, including newly generated members; absent kinds remain available for later scenes. `hiddenKinds:[]` restores those classes while preserving `hiddenIds`, `hiddenLayers` and `scopedLayers`. To show one class, read current visibility and remove only that kind from the array. Detailed live GPU cabinets have kind `rack`; distant factory GPU envelopes have kind `gpu-rack`, so both kinds select all GPU cabinets. Layer names such as `coldplate` are separate from the solver entity kind `cold_plate`. `facility.pipeRoutes` retains stable `asset:*` parent identities. Shared TCS parents bind real segments through `solverEdgeIds`; row/rack display proxies refer to existing numerical pipes. Follow child segments for temperature, flow and pressure; junctions prevent a unique aggregate parent reading. HTFW/MTFW remain reference routes. TCS supply passes through each buffer before joining twin supply headers; two normally closed valves segment the return headers. Shared CRAHs follow a cropped 14-unit gallery: 1–6 DUs produce 5/10/14/18/23/28 CRAHs. Primary services end at named CUB boundaries; the single DU does not include a fractional central plant. Counts and circuit relationships follow issued PDFs; individual envelopes, routing elevations and internal details remain `geometryAssumed`. Earlier DSX scenes receive cooling scope decoration on read; saved files and numeric samples remain unchanged. CDUs, buffers and NC valves use explicit `sampleEdgeId` bindings for builtin readings; CDU samples refer to the HX secondary side. Other reference assets require explicitly sourced published fields.
-
-The `vera-rubin-nvl72` profile follows the public Vera Rubin NVL72 layout pattern: back-to-back racks with rear faces toward a 6 ft hot aisle, outward front/service faces, hot-aisle-side supply/return, rear manifolds and row-end CDU service zones. There are 18 compute positions and 9 visual NVLink trays. Fewer populated compute trays means a partial demonstration. Up to 256 racks and 1–16 racks/CDU are supported; the schemas disclose numeric limits. Legacy schematic layouts allow up to 24 trays/rack. Exact pipe heights, offsets, tray U positions and service widths are assumptions. Reference sources and gaps appear in the scene and inputs. Do not claim complete NVIDIA/NVOnline reference conformance or construction dimensions.
-
-Schematic/NVL72 CDU circuits are independent with prescribed supply. DSX has one shared PG25 TCS per DU, solved local water primary branches and computed secondary supply. Upstream primary head is prescribed by default; explicit shared-primary mode couples DUs. DSX facility pipes at least 2 m have transport cells; other Hall pipes default to no delay unless `n_cells>0`. Thermal/pump parameters are synthetic and unselected cold plates stay lumped. Support heat is an explicit aggregate equivalent, not resolved support-rack physics. Minimum-flow bypasses and header ties have illustrative balancing resistance. Air cooling, facility electrical power and qualified plant capacity remain excluded. Hall exports detach saved tensors. Do not claim GPU junction temperatures, calibrated capacity/safety limits or Hall gradients.
-
-Read `get_hall(includeConfiguration=true,runId?,spatialId?,detailHall?,detailDu?)` for effective settings, units, origins, applicability, initialization and captured execution; `spatialId` selects a component. UI **Model & solver** reads the same data through its app-only transport. No run ID reads current inputs; a run ID reads its immutable execution. Reference-only selections have no numerical parameters; old missing provenance remains unknown. Do not reconstruct sources from current defaults. Hall `initialState.policy` is `model` or the explicit `supply-temperature` template assumption; named `componentStates` cover registered dynamic states, and `warmupSeconds=0` disables warmup.
-
-`hydraulic_acceptance="strict"` requires actual convergence. `"approximate"` explicitly retains an incomplete operating point and blocks unjustified implicit gradients. `node_mixing_mode` separates physical treatment from the iteration budget: Engine and Hall default to `algebraic`. Fixed explicit phases do not use adaptive `rtol/atol`; a complete-step IMEX controller can still use them. Inspect the saved runtime tolerance scope. `max_thermal_substeps` is a work budget, not permission to change dt or tolerances. HX keeps its `legacy_effective_mass` law: inertia constants are effective kg, `thermal_mass` enables inertia; unused legacy values are reported rather than silently treated as effective.
-
-Completed `ctx.simulator()` executions capture actual overrides, component values and convergence in `managedExecutions`. Custom Python may use other constructors; those executions are not claimed captured. Constructor-only cached geometry/material changes require rebuilding the component and its state. Query/Inspect extrema use declared saved samples; integration-step temperature maxima remain in saved peak summaries. Preserve this distinction when explaining hotspots.
-
-Advanced project Python APIs run on the backend through `run_analysis(code,sceneId?,sourceRunId?,model?,config?,show?)`, including when the plugin connects remotely. Code runs in a separate tracked worker, with the same listing, cancellation and deletion mechanisms as simulations. Submitted inputs are immutable snapshots; `ctx.model` and `ctx.scene` are editable worker copies. `ctx` also provides the scenario, topology construction, source observations and field publication; read `describe_hall` for its exact contract. Core/solver/task modules are importable for differentiable rollout, calibration, optimization, sensitivities and sensing. Verify the particular numerical and gradient path; detached source samples do not regain gradients. Analysis without a solved source has no builtin numerical observations.
-
-For facility sources, `ctx.source_facility(summary=False)` returns the saved partition manifest; `summary=True` includes global rack summaries. `ctx.source_result(detailHall=1,detailDu=2)` and `ctx.source_samples(...)` read that DU's metadata and original SI arrays. Without detail arguments they read the original detailed DU, not all node/edge traces. An unchanged derived analysis retains source partitions independently of later source deletion. Changed inputs/model/mapping drop inherited numerical coverage. Source-reading methods never run a solver.
-
-Use `ctx.simulator(**solver_options)` to construct the shared core simulator from the current model without running it. For DSX it applies fixed equipment isolation; dynamic scenario events still require explicit analysis control. It preserves saved Hall or free-scene solver settings; explicit overrides use the schema from `describe_hall`. Generic `run_analysis` config accepts `solver` alongside name/duration/dt, and source-derived analyses retain those settings. `run()` is a value-only forward entrypoint. Use `rollout_tensor()` or the differentiable SystemModel entrypoint for gradients; auto retains a compatible differentiable route. They share numerical dispatch and return float or tensor histories. Inspect `result.execution_report` or Hall `run.executionReports` for actual fast paths and fallback reasons; enabled switches alone do not establish use. Hydraulic counters cover equilibrium evaluation, excluding IFT backward. Custom components, transport ODEs, live gradients and mutating callbacks retain appropriate generic paths. A boundary declaring `supports_packed_thermal=True` must keep topology and thermal coefficients fixed and return supported load inputs. Do not enable it for arbitrary mutating callbacks.
-
-Facility `partitionWorkers` requests 1–4 processes for independent DU solves, default 1; actual workers obey the shared CPU/slot/thread budget and appear in `partitionExecution`. It applies only to the default independent-DU path. Explicit `sharedPrimaryLoop:true` retains and solves the full coupled network in one worker.
-
-Use `ctx.publish(fields)` inside analysis or `publish_result_fields(runId,fields)` for computed observations. Each field declares id, optional label, unit, exact entityIds, sorted times in seconds, time-major values[time][entity], and provenance. Static fields have one time, unavailable values use null. Original solver samples stay intact. Read descriptors with `get_hall(runId)`, use the new metric ID in `query_results` and `focus_hall`, and guide spatial/temporal exploration with the existing view mechanisms. Published fields may explicitly describe contextual equipment; the interface must distinguish these sourced observations from builtin solver outputs.
-
-## Load sources and analysis content
-
-These tools manage saved inputs and content independently of presentation:
-
-| Tools | Purpose |
-| --- | --- |
-| `import_load_profile`, `get_load_profile`, `list_load_profiles` | Create/update a source, read normalized data/original columns, search/paginate metadata |
-| `bind_load_profile`, `delete_load_profile` | Snapshot or unbind draft inputs; delete a source without rewriting saved runs |
-| `publish_artifact`, `get_artifact`, `list_artifacts`, `delete_artifact` | Create/update, read, discover or remove analysis content |
-
-`import_load_profile` stores CSV or JSON content and returns a preview; it leaves the experiment unchanged. classification is imported (default), measured or assumed; measured/assumed records an explicit caller declaration. A file upload alone does not prove measurement. Declare W/kW, IT/liquid power basis, hold/linear interpolation and outside-range behavior. Columns can describe long rows (`time/value/series`) or wide rows (`time/values`); JSON can contain named point series. Zoned timestamps share an elapsed-time origin; fractional seconds remain intact. Read/list/update sources with `get_load_profile`, `list_load_profiles` and another import with `profileId`.
-
-`bind_load_profile(profileId,...)` explicitly applies a source snapshot to the draft. Declare `allocation=total` for conserved group power or `per-member` for the power of each named member. Convenience `target={kind:facility|hall|du|su|rack|tray,id?}` resolves a group; explicit `bindings=[{seriesId,entityIds,distribution,weights?}]` uses exact global DSX IDs or local schematic IDs. Weights apply only to totals and correspond to the named entities. Multiple series need explicit mapping. Updating a source does not update draft bindings: rebind deliberately. `bindings=[]` removes the draft binding while retaining its source. `validateOnly=true` previews without applying. Deleting a source removes its draft binding while saved runs retain normalized input snapshots. Classification describes the input source; allocated heat and simulated temperatures retain their respective provenance. Set `dt` for numerical resolution and `recordIntervalS` for output sampling, as a dt multiple; the imported boundary law is sampled and held at each integration-step start. Peak evidence is tracked independently of the output interval.
-
-Use `publish_artifact({artifact})` or worker `ctx.publish_artifact(artifact)` for chart, table, Markdown and image content. Required content fields are `kind/title/content/provenance`; optional associations are `sceneId/runIds/entityIds/time/window/metric`. An existing `id` permits partial metadata updates; omitted associations remain, while time:null or window:null removes the respective association. Null on initial publication means no temporal association. Supplied content replaces its entire value and increments the revision. Worker IDs are run-prefixed when explicitly supplied; retain the returned ID. Publishing does not open content, change time or move the camera.
-
-Chart content is `{option:ECharts JSON,links?:[{seriesIndex,dataIndex,entityId?,runId?,time?,window?}]}`. Table content is `{columns:[{key,label?,unit?}],rows:[object],links?:[{rowIndex,...}]}`. Markdown content is `{text}` with inline `$...$` and block `$$...$$` formulas; code fences retain literal text. Images use `{mimeType,dataBase64}` for PNG/JPEG/WebP/SVG; a worker may use `{path}` relative to `ctx.output_dir`, or an absolute path, and registration copies its bytes. Remote backends require no caller filesystem path. Raster `get_artifact` reads return MCP pixels plus metadata; App reads retain full bytes. Static images expose no point-selection controls.
-
-`focus_hall(analysis={source,task,scope,artifactId,open,placement,anchor,interactions})` controls one active analysis surface. `source:"selection"` follows the existing top-level object, metric, run and time/window binding without creating a saved artifact. Its persisted `task` is `auto` (default), `geometry` or `trend`: auto shows a numerical trend when this binding has finite samples and otherwise offers geometry explanation/circuit tasks; geometry explicitly offers explanation, circuit drawing and connection-table requests through the existing Codex conversation; trend explicitly shows numerical data or its missing-sample prerequisite. Use `source:"artifact"` with artifactId for fixed published content. With source omitted, a supplied non-null artifactId infers artifact and null infers selection. Explicit selection source or artifactId:null resets task to auto unless task is supplied; open-only and placement-only patches retain the task. Set `open:true` to display it. Selecting another object or metric does not overwrite fixed content. Read actual `context.analysis.displayMode/source/binding/contentBinding` to distinguish geometry, trend and fixed content, its live binding or declared fixed associations. Preview or absent measurements provide no fabricated trend.
-
-Placement is `auto`, `anchored` or `docked`; anchor is `{entityId?,position?:[x,y,z],offset?:[x,y,z]}` in world metres. Auto docks multi-object content and joins the component card for a resolved single-object item. Explicit anchored placement can use a chosen anchor for multi-object content. The card adapts to 280–390 px of available side space and scrolls long content internally. A fixed anchor conflicting with a new selection docks rather than redirecting the selected object's actions. Probing another object with an unpinned card temporarily docks fixed content with `hover-changed`, then restores its anchor on leave. Widths up to 460 px, genuinely insufficient space, offscreen and unresolved anchors also dock; read `placementReason/anchorState` in actual analysis context. Close by setting open=false; deletion is separate. Analysis fields merge, supplied interactions replace the entire state, and null/{} clears them. Changing placements retains content and selections. Back restores prior exploration and actual analysis interactions; it never undoes model edits, calculation jobs or content deletion. After user camera or selection changes, read the current context before continuing guidance.
-
-Chart controls are `legend={legendEntry:boolean}`, `dataZoom=[{dataZoomIndex?,start?,end?,startValue?,endValue?}]`, `selectedPoints=[{seriesIndex,dataIndex}]` and `brush={areas:[ECharts JSON]}`. Start/end are percentages; startValue/endValue use axis values. Table controls are `sort={key,direction:asc|desc}` or null, `filter={columnKey:substring}`, and `selectedRows=[originalRowIndex]`. Markdown/image accept no chart controls. Read `context.analysis.capabilities`; unsupported components, invalid rendered indexes and points outside the current zoom/filter fail explicitly. Native line charts retain/report brush areas without deriving selectedPoints; scatter and other series with native brushSelector support derive points. Point/row links share object/time context without implicitly flying the camera.
-
-Annotations require id/label and may contain body/artifactId/sceneId/runId/entity or a world-space position. Read `get_hall.view.annotations` for saved requests and `context.annotations` for the UI report. `focus_hall(annotations=[...])` replaces the whole list: retain unrelated entries when creating, editing or removing one marker; `annotations=[]` clears it. Model-only explanations need no run or fabricated metric. Numerical findings retain real run/time/window/metric associations; when they belong to another saved DU, preserve detailHall/detailDu and the global entity identity. Scene markers can open linked analysis content.
-
-Read actual `context.analysis` before continuing a user's exploration, and confirm its rendered revision and applied view sequence after controlling it. Actual context includes kind, placement, placementReason, resolvedAnchor, interactions, capabilities, anchorState and renderError; source-loss metadata is available through get_artifact. Live trends resolve an entity-only anchor against the current selection; explicit world positions remain fixed. A stored request alone does not confirm display. Preserve human selections unless the request requires changing them, and distinguish a missing association from unavailable simulated values. Use the existing conversation for instructions and extended discussion.
-
-Fixed content reuses reported interactions only for its current revision. Invalid inherited controls clear; explicitly requested invalid controls still fail. Live trend controls reset when the object or result series changes, while cursor and observation-window updates preserve valid zoom and legend state.
-
-The remote service owns simulation, persistence and the MCP App bundle. The host loads that bundle through MCP resources and executes it locally. The installed plugin contains connection metadata, skills and assets; it needs no solver checkout or local Python runtime.
-
-The interface defaults to English with independent English / 中文 selection. UI locale changes labels, not scenario/model data or chat language. Respond in the human's current conversation language.
-
-Findings are source-scoped. `view.annotations` is the complete saved collection; `context.annotations` contains only findings displayed for the current source. New source-free findings bind to the current run, scene, or draft modelId; do not relabel historical findings as current. Open the owning saved run to revisit its findings. Fixed analysis content closes automatically when its sources leave the view; explicitly opening historical content remains supported in the dock, with provenance and no attachment to a same-named component from another source.
-
-## Single-scene exploration
-
-The plugin gives the agent shared spatial context, direct view control and source-linked interactive analysis in the existing Codex conversation. Keep one displayed run. `compare_runs`, view `compareId`/`side`/`comparisonOrder`, and comparison annotations are removed. Do not recreate a second current result through another tool.
-
-Use `focus_hall(analysis={source:"selection",task:"trend",scope:"selection",open:true})` for selected-object numerical trends, including multiple objects from the same run; missing samples show their data prerequisite. Use `task:"geometry"` for explanation/circuit tasks and `scope:"scene"` for a whole-scene task or numerical overview in the same surface. Coldplate summaries use their saved maximum; other temperature fields use maximum/minimum; flow and liquid heat use totals. Facility summaries span all solved DUs when available; other metrics explicitly cover the displayed result scope. Missing samples remain gaps. These defaults require no saved artifact. Publish sourced charts, Markdown, tables or images for additional interpretation; this preserves general analysis capabilities without adding a parallel dashboard.
-
-Wide views dock analysis beside 3D and allow resizing; narrow views dock below and allow expansion. Single-object content can anchor next to its component. The object card combines identity, readings, inspection, isolation, editing and a direct trend action. Findings live in a compact popover and spatial/time markers. Hover probes; clicking fixes the object card. Selection alone keeps the camera still.
-
-Editing inputs does not modify saved results. The UI distinguishes current editable inputs from displayed saved inputs. A submitted job opens automatically only while it remains the requested job; navigating away or editing inputs prevents late completion from replacing the user's observation. Historical results and their findings can be opened explicitly. Legacy B views migrate to their actual B run, A views to A; delta findings are retained in backend `prototype/retired-comparison-notes.json` but are not shown as current single-run observations.
-
-Configuration evidence defaults to a compact summary. Read effective settings, origins, selected component parameters, initialization policy/counts, convergence and fallback reasons with `get_hall(includeConfiguration=true,runId?,spatialId?)`. Request `configurationDetail="full"` on that call only when complete initialization or per-component execution details are needed. Original saved evidence remains unchanged.
+# RDA Cooling Lab
+
+Use the connected service for modeling, simulation and saved-result exploration.
+Platform supplies tools/UI/storage; Engine supplies physics. Read tools/list and
+describe_hall for actual capabilities. Installing this thin plugin does not
+upgrade its backend. Read [advanced analysis](references/advanced.md) only for
+Python or differentiable-task workflows; ordinary and safety rules are here.
+
+## Sessions, sources and recovery
+
+open_hall() creates an independent workspace and editable application session.
+Retain sessionId and pass it to stateful calls. Reopen with that sessionId; login
+and MCP transport identity do not choose an application session. list_workspaces
+finds retained experiments. workspaceId opens read-only; sourceWorkspaceId copies
+inputs into an editable workspace without historical results. Recover a
+connection by reusing the session; check actual state before retrying a timed-out
+write or job submission.
+
+Keep current inputs, displayed immutable results and camera independent. Read
+revisions before editing, reconcile conflicts and preserve newer user edits.
+Use explicit sceneId for a current ordinary scene and sourceRunId for a deliberate
+saved-run variant. Displaying a result does not replace current settings or pick
+the next Run inputs. Reopening a panel does not authorize another computation.
+
+## Build and run ordinary scenes
+
+Use create_hall for parameterized rooms and create_scene/update_scene for composed
+equipment, ports, groups and pipes. Geometry uses metres and rotationY radians.
+Exact routes retain supplied paths; explicit auto routing connects declared
+ports around geometry. Geometry alone has no numerical coverage.
+
+Attach an executable supported solverModel, or use advertised solverExport for
+supported two-port devices with explicit physical boundaries and constitutive
+parameters. Export follows actual routes, elevations and port connectivity.
+Four-port primary/secondary HX networks need an explicit solverModel and real
+couplings. The two-port exporter does not infer them. Declare engineering
+assumptions, their source and uncertainty. Do not manufacture hidden inventory,
+conductance or ratings. Reference equipment may remain visual-only.
+
+For ordinary simulation, prefer JSON configuration over Python analysis:
+
+1. Read get_scene(sceneId), saved scenario, numerical association and revision.
+2. If configure_scenario advertises sceneId and the ordinary schema, validate a
+   complete config with validateOnly=true. It checks static admission and targets
+   without a solve, job or input mutation. Read-only sessions may validate.
+3. Save the complete accepted config with sceneId and expectedRevision. For a
+   small edit, modify the full config just read, preserving controls, limits,
+   events and output times. Omission resolves ordinary defaults; it is not a
+   patch. Hall recipes/convenience patches stay scoped to Hall.
+4. Run sceneId with the reviewed revision. Omitted config uses saved settings;
+   explicit config is a complete one-run replacement and saves nothing. Use
+   sourceRunId for an immutable result variant; no selector uses the Hall draft.
+5. Retain jobId, poll get_hall/list_simulations to terminal status, and inspect
+   actual saved inputs/execution. A queued job or static admission is no result.
+
+If persistent scene settings are absent but run_simulation advertises sceneId/
+config, an explicitly requested one-run experiment may still use them. Explain
+that it does not save settings. Never replace a save-only request with a run or
+send guessed fields to an older service.
+
+Discover warmupSeconds, canonical initialState, SI boundary/actuator events,
+controllers, observations, explicit timesS and optional meshQualification from
+the connected schema. Changing dt preserves explicit output times. Invalid
+dependent times require correction; do not silently trim events or loosen
+precision. Default conservative support is subject to actual Engine admission.
+Reduced remains frozen and explicit, with different physical assumptions.
+
+## Inspect results and physical evidence
+
+get_hall(runId,includeConfiguration=true) returns actual model/solver settings,
+origins, initialization, clocks, execution reports and bounded evidence. Static
+admission does not certify runtime convergence, safety or accuracy. Ordinary
+qualification applies only to its declared observables, budgets and exact
+validated inputs; reuse is not a universal scene certificate. It does not qualify
+trajectory gradients. Keep full-trajectory gradient studies separate and respect
+the user's compute scope or paused work.
+
+Discover exact solver-node/component/observation descriptors using list_entities
+kinds/query/pagination. Preserve full IDs, including colons; use discovered metric
+IDs, units and unavailable nulls in query_results. Numerical results do not require
+geometry. Only actual export associations or explicit physical mappings permit
+3D coloring. Names, positions and matching counts cannot establish a mapping.
+Multiple ports/paths need a declared measurement, not an arbitrary outlet.
+
+Safety is sampled. A violation may coexist with incomplete coverage. Distinguish
+no limits, no samples, unavailable checks, unknown absolute pressure, evaluated
+pass and violation. Zero alerts alone proves nothing. Read actual limit
+assumptions, scope, worst margin/entity/time and sampling. Never invent a rating
+or turn an arbitrary gauge into absolute pressure with an assumed offset.
+
+Energy evidence separates storage, external/boundary power and physical/junction/
+assembly defects. HX internal exchange is not extra external heat; fan electricity
+is separate from liquid heat. Storage change from formal t0 requires its recorded
+baseline. Sampled power quadrature is not an integration-stage energy identity.
+Do not fabricate thresholds or reconstruct constitutive duty from mixed nodes.
+Inherited source observations are not predictions for edited inputs.
+
+When advertised, query_results(report=safety|energy,limit/offset) reads detailed
+scalar evidence and preserves coincident event observations. Reject combinations
+with ordinary metric/entity/aggregate selectors. Follow nextOffset/hasMore;
+missing historical reports remain unavailable, without hidden recomputation.
+
+## Present, retain and clean
+
+Use focus_hall to select exact entities, results, metrics and time/window, or to
+open the existing selection trend. Unmapped numerical channels can plot without
+camera targets. Request camera movement explicitly and only for spatial objects;
+selection does not imply movement. Geometry previews have no computed readings.
+
+view.sequence acknowledges receipt, not rendering. Check actual
+context.appliedViewSequence, source/selection and viewError before claiming that
+the panel displayed a request. Read actual camera pose/transition after movement.
+Preserve the user's investigation and unsaved input when saving or queueing.
+
+Publish sourced fields for derived numerical data and artifacts for durable
+charts/tables/Markdown/images. Publishing and opening are separate actions.
+Use registered image bytes for remote services, not caller-local paths. Imported
+loads require declared units, elapsed/absolute time basis, IT/liquid power basis,
+interpolation and conserved total/per-member allocation. Importing does not bind
+a source; apply it through the service's explicit binding/snapshot tools.
+
+Keep requested results and dependencies through existing retention controls.
+Closing a panel deletes nothing. Preview cleanup candidates and delete only in
+the requested scope, respecting active jobs and kept content. Use host-managed
+OAuth and never expose credentials in content, tools or code.

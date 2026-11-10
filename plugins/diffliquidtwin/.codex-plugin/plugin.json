@@ -1,6 +1,6 @@
 {
   "name": "diffliquidtwin",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Build cooling models, simulate operating conditions, and explore results in linked 3D views and charts with Codex.",
   "author": {
     "name": "Red Dot AI",
@@ -32,7 +32,7 @@
     "brandColorDark": "#D42128",
     "defaultPrompt": [
       "Build a ~10 MW Vera Rubin room from DSX, simulate changing loads, and explore hotspots in linked 3D views and charts.",
-      "Build a custom cooling scene with racks, a CDU and primary-side equipment; show its connections in 3D.",
+      "Build a custom cooling scene, review its physical assumptions, save simulation settings, and inspect results in 3D and charts.",
       "Analyze a saved simulation with Python, map a derived metric onto the 3D scene, and explain selected components."
     ]
   },

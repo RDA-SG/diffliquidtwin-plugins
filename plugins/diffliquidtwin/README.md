@@ -2,23 +2,14 @@
 
 Build cooling models, run simulations and Python analyses, and explore results in linked 3D views and charts with the Red Dot AI hosted service.
 
-## Version 0.3.0
+## Version 0.3.1
 
-This package documents Wave 4A Platform tools: asynchronous calibration,
-static control/design optimization, observability and D/A/E sensor design;
-sampled SafetyEnvelope diagnostics; additional field cold plates and
-valve/expansion-tank inputs; opt-in DSX fault interlocks and shared primary
-multi-DU solves. Tool availability follows the connected service's discovery,
-not the plugin version. Existing default DSX behavior remains unchanged.
-See the [skill contract](skills/diffliquidtwin/SKILL.md#wave-4a-tools-and-opt-in-physics)
-for submission, retrieval, assumptions and paired Engine compatibility gaps.
-
-Wave 4B support in the same `0.3.0` client package documents Platform/Engine
-`0.8.0`: `assimilate_states` for EKF/MHE streaming or batch state/parameter
-estimation, and opt-in `inertialHydraulics` for pipe momentum and pump rotor
-coast-down. See [Wave 4B usage and limits](skills/diffliquidtwin/SKILL.md#wave-4b-assimilation-and-inertial-hydraulics).
-The connected service must advertise these tools and controls; plugin
-installation alone does not enable them.
+Guidance now covers supported ordinary composed-scene simulations, saved
+settings/revisions, explicit current versus historical inputs, numerical/spatial
+mapping and truthful safety/energy/accuracy evidence. Advanced Python/task usage
+is available separately. The matching service candidate is 0.10.0; installing
+this package does not deploy its backend. Discover actual connected capabilities
+instead of assuming production availability from a version number.
 
 ## Install
 

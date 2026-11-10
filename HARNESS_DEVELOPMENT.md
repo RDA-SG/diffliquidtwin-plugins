@@ -29,9 +29,25 @@ Negotiate MCP with `initialize`, then read `tools/list` and `resources/list`. Th
 
 Keep saved-run inputs and execution evidence separate from current draft edits. Async simulation tools return jobs that must be polled to a terminal state. Reopening a panel should reuse its saved session and results, without submitting another simulation. Preserve structured content, errors and metadata instead of flattening all responses into text.
 
-## Wave 4A task jobs
+## Ordinary composed-scene lifecycle
 
-Plugin `0.3.0` describes five asynchronous tools: `calibrate_parameters`
+Discover configure_scenario sceneId/generic-config support before saving settings.
+get_scene returns scenario and scene revision. Validation is read-only; saves
+require expectedRevision and a complete config. Omitted Run config uses saved
+settings; explicit config is a one-run replacement. sceneId selects current
+inputs; sourceRunId selects immutable historical inputs; no selector uses Hall
+draft. Displayed results do not pick the next input source implicitly.
+
+The configuration action uses explicit sceneId for current settings and runId
+for saved inputs/execution. get_hall(includeConfiguration) shares bounded evidence.
+Discover numerical descriptors through list_entities kinds/query/pagination and
+use existing query/selection/trend paths independently of geometry. Only actual
+export or explicit physical mappings permit coloring. Temporal safety/energy
+report queries are paged and separate from ordinary metric queries.
+
+## Advanced task jobs
+
+The connected service may advertise five asynchronous tools: `calibrate_parameters`
 (`Calibrator`), `optimize_controls` (`ControlOptimizer`, static setpoints),
 `optimize_design` (`DesignOptimizer`), `analyze_observability`
 (`ObservabilityAnalyzer`) and `design_sensors` (`SensorDesigner`). Discover
@@ -63,7 +79,7 @@ Message, model-context attachment and fullscreen capabilities are optional and m
 
 New experiments use Engine `method="auto"` and `max_thermal_step_s=null`. `null` delegates thermal-step selection to Engine; zero is invalid. Positive caps and explicit methods remain available. Read current schemas rather than maintaining a separate method list. The service's configuration summary is suitable for ordinary inspection; request full configuration for detailed diagnosis.
 
-Outer integration timing, control timing, output recording and internal thermal steps are distinct. Keep unchanged fields when patching one setting. Saved execution evidence records the actual methods, fallbacks, work and tolerance scope; a requested `auto` method or a successful run alone is not a global accuracy guarantee. Inspect model assumptions and result provenance before interpreting temperatures, flows or pressures.
+Outer integration timing, control timing, output recording and internal thermal steps are distinct. Ordinary scenes require a complete configuration preserving unrelated fields; Hall convenience patches retain their own scope. Saved execution evidence records the actual methods, fallbacks, work and tolerance scope; a requested `auto` method or a successful run alone is not a global accuracy guarantee. Inspect model assumptions and result provenance before interpreting temperatures, flows or pressures.
 
 ## Minimum acceptance for a new harness
 
