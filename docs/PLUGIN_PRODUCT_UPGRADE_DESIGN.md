@@ -1,9 +1,11 @@
 # Plugin and product upgrade design for the ordinary-simulation release
 
-Status: reviewed design; implementation was separately authorized and is in
-progress. This document itself does not authorize publication, deployment or
-full-gradient studies.
-Proposed pairing: Plugins 0.3.1 with the unreleased Engine/Platform 0.10.0
+Status (2026-11-11): A–D are implemented in the unreleased candidate. E passed
+isolated installed-service and ordinary browser-flow checks; supported native-host
+interaction remains untested because the host connection/panel cannot be opened
+with the available automation. Browser and SDK checks do not pass that gate.
+No publication, deployment or full-gradient studies occurred.
+Candidate pairing: Plugins 0.3.1 with the unreleased Engine/Platform 0.10.0
 candidate. Version 1.0 requires an explicit user request.
 
 ## 1. Outcome and ownership
@@ -372,8 +374,9 @@ examples, without private acceptance fixtures, inventories or deployment config.
 ## 9. Proposed delivery order, effort and acceptance
 
 These are preliminary elapsed-agent ranges, separated from passive waits; they
-are not human staffing estimates or measured commitments. Re-estimate after the
-first contract slice. No managed execution plan or implementation is created.
+are not human staffing estimates or measured commitments. They are retained as
+design estimates; implementation was subsequently authorized. No managed
+execution plan was introduced. The status above records the remaining gate.
 
 | Step | Deliverable | Code/content work | Active verification | Passive waits |
 | --- | --- | --- | --- | --- |
