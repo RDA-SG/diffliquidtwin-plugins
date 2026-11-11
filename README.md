@@ -31,8 +31,8 @@ was published. Production native-host interaction was subsequently verified afte
 the host connection catalog: actual saved-result trends and both release-note
 languages were exercised. Automatic historical-card remount remains unqualified. Platform owns the deployment and recovery
 record in `prototype/DEPLOYMENT_20261111.md`. The subsequent UI-only Platform
-0.10.1 patch keeps Engine 0.10.0; its native recheck is blocked by a stale host
-resource catalog and is not covered by the earlier 0.10.0 acceptance.
+0.10.1 patch keeps Engine 0.10.0; its separate native acceptance passed after a
+desktop restart refreshed the stale resource catalog.
 
 For Claude or another harness, follow the [harness development guide](HARNESS_DEVELOPMENT.md). The server publishes the shared frontend and current tool schemas.
 
