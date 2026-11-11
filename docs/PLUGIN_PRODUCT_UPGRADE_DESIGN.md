@@ -1,6 +1,6 @@
 # Plugin and product upgrade design for the ordinary-simulation release
 
-Subsequent deployment (2026-11-11): Engine/Platform 0.10.0 is live and Plugin 0.3.1 is installed locally. No marketplace update was published. Production native-panel interaction remains unverified; the candidate acceptance below retains its original scope. Platform records the deployment in `prototype/DEPLOYMENT_20261111.md`.
+Subsequent deployment (2026-11-11): Engine/Platform 0.10.0 is live and Plugin 0.3.1 is installed locally. No marketplace update was published. Production native-panel interaction was subsequently verified after explicit host connection recovery; automatic historical-card remount remains unqualified. The candidate acceptance below retains its original scope. Platform records the deployment in `prototype/DEPLOYMENT_20261111.md`. A subsequent UI-only Platform 0.10.1 patch is live with unchanged Engine 0.10.0. Its native reacceptance remains blocked by the desktop retaining the 0.10.0 resource catalog; the earlier native evidence does not qualify the patch.
 
 Status (2026-11-11): A–E are implemented and accepted for the agreed ordinary
 simulation candidate. E passed isolated installation, actual native-host ordinary

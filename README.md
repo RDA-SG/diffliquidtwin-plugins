@@ -27,9 +27,12 @@ records the implemented Plugin, MCP and UI work for the 0.10.0 service,
 including independent review and completed candidate native-host acceptance. Automatic host remount remains unqualified; explicit same-session
 reopening was verified. The hosted Engine/Platform service was upgraded to 0.10.0 on 2026-11-11.
 Plugin 0.3.1 was installed locally from the fixed package; no marketplace update
-was published. Production native-host interaction remains unverified because
-the production panel did not mount. Platform owns the deployment and recovery
-record in `prototype/DEPLOYMENT_20261111.md`.
+was published. Production native-host interaction was subsequently verified after refreshing
+the host connection catalog: actual saved-result trends and both release-note
+languages were exercised. Automatic historical-card remount remains unqualified. Platform owns the deployment and recovery
+record in `prototype/DEPLOYMENT_20261111.md`. The subsequent UI-only Platform
+0.10.1 patch keeps Engine 0.10.0; its native recheck is blocked by a stale host
+resource catalog and is not covered by the earlier 0.10.0 acceptance.
 
 For Claude or another harness, follow the [harness development guide](HARNESS_DEVELOPMENT.md). The server publishes the shared frontend and current tool schemas.
 
