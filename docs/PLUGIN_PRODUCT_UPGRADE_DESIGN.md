@@ -1,14 +1,16 @@
 # Plugin and product upgrade design for the ordinary-simulation release
 
+Subsequent deployment (2026-11-11): Engine/Platform 0.10.0 is live and Plugin 0.3.1 is installed locally. No marketplace update was published. Production native-panel interaction remains unverified; the candidate acceptance below retains its original scope. Platform records the deployment in `prototype/DEPLOYMENT_20261111.md`.
+
 Status (2026-11-11): A–E are implemented and accepted for the agreed ordinary
 simulation candidate. E passed isolated installation, actual native-host ordinary
 workflows and final source-only numerical-selection rechecking. Automatic host
 remount and cross-build replacement remain unqualified; supported explicit
 same-session reopening was verified. Browser and SDK checks alone do not pass
 the native gate.
-No publication, deployment or full-gradient studies occurred.
-Candidate pairing: Plugins 0.3.1 with the unreleased Engine/Platform 0.10.0
-candidate. Version 1.0 requires an explicit user request.
+At the candidate acceptance boundary, no publication, deployment or
+full-gradient studies had occurred. The candidate pairing was Plugins 0.3.1
+with Engine/Platform 0.10.0. Version 1.0 requires an explicit user request.
 
 ## 1. Outcome and ownership
 
