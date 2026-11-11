@@ -1,6 +1,14 @@
 # Plugin and product upgrade design for the ordinary-simulation release
 
-Subsequent deployment (2026-11-11): Engine/Platform 0.10.0 is live and Plugin 0.3.1 is installed locally. No marketplace update was published. Production native-panel interaction was subsequently verified after explicit host connection recovery; automatic historical-card remount remains unqualified. The candidate acceptance below retains its original scope. Platform records the deployment in `prototype/DEPLOYMENT_20261111.md`. A subsequent UI-only Platform 0.10.1 patch is live with unchanged Engine 0.10.0. Its separate native acceptance passed after a desktop restart refreshed the stale resource catalog; actual new-build trends, language hints and bilingual dialogs were verified.
+Current integration status (2026-11-12): Engine 0.10.0 and Platform 0.10.2
+are deployed; Plugin 0.3.1 is the client source/release baseline. Production
+native interaction passed after refreshing the host connection catalog,
+including saved-result trends, English/Chinese release dialogs and actual
+832/319 CSS-pixel layouts. Automatic historical-card replacement remains
+unqualified. Platform owns `prototype/DEPLOYMENT_20261111.md` and the separately
+verified menu follow-up that is merged in source but not deployed. Source
+integration preserves fixed production artifacts and deferred gradient work.
+The candidate acceptance below retains its original chronology and scope.
 
 Status (2026-11-11): A–E are implemented and accepted for the agreed ordinary
 simulation candidate. E passed isolated installation, actual native-host ordinary

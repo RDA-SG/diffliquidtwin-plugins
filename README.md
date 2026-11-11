@@ -23,16 +23,19 @@ New experiments use the service's automatic Engine method selection. An automati
 ## Development
 
 The [ordinary-simulation upgrade design](docs/PLUGIN_PRODUCT_UPGRADE_DESIGN.md)
-records the implemented Plugin, MCP and UI work for the 0.10.0 service,
-including independent review and completed candidate native-host acceptance. Automatic host remount remains unqualified; explicit same-session
-reopening was verified. The hosted Engine/Platform service was upgraded to 0.10.0 on 2026-11-11.
-Plugin 0.3.1 was installed locally from the fixed package; no marketplace update
-was published. Production native-host interaction was subsequently verified after refreshing
-the host connection catalog: actual saved-result trends and both release-note
-languages were exercised. Automatic historical-card remount remains unqualified. Platform owns the deployment and recovery
-record in `prototype/DEPLOYMENT_20261111.md`. The subsequent UI-only Platform
-0.10.1 patch keeps Engine 0.10.0; its separate native acceptance passed after a
-desktop restart refreshed the stale resource catalog.
+records the implemented Plugin, MCP and UI work and its acceptance boundaries.
+The current source baseline is Plugin **0.3.1**, paired with deployed Engine
+**0.10.0** and Platform **0.10.2**. The fixed client release is `v0.3.1`;
+existing installations follow the host's normal update workflow.
+
+Production native interaction passed after the host connection catalog was
+refreshed: actual saved-result trends, English/Chinese release dialogs and
+832/319 CSS-pixel layouts were exercised. Supported explicit same-session
+reopening is verified; automatic replacement of every historical cached card
+remains unqualified. Platform owns `prototype/DEPLOYMENT_20261111.md` and the
+separate, locally verified menu follow-up that is merged in source but not
+deployed. Source integration does not change the fixed production installation
+or resume deferred full-gradient studies.
 
 For Claude or another harness, follow the [harness development guide](HARNESS_DEVELOPMENT.md). The server publishes the shared frontend and current tool schemas.
 
