@@ -45,25 +45,47 @@ use existing query/selection/trend paths independently of geometry. Only actual
 export or explicit physical mappings permit coloring. Temporal safety/energy
 report queries are paged and separate from ordinary metric queries.
 
-## Advanced task jobs
+## Advanced tasks
 
-The connected service may advertise five asynchronous tools: `calibrate_parameters`
+The connected service may advertise six task tools: `calibrate_parameters`
 (`Calibrator`), `optimize_controls` (`ControlOptimizer`, static setpoints),
 `optimize_design` (`DesignOptimizer`), `analyze_observability`
-(`ObservabilityAnalyzer`) and `design_sensors` (`SensorDesigner`). Discover
-schemas from the service; pass the application session, bounded scalar
-parameters and task-specific options. Poll `get_task_result(jobId)` to a
-terminal state. JSON task results have no simulation frames and never modify
-the draft. Read-only sessions can retrieve, but cannot submit jobs. Existing
-cancellation, deletion and retention tools apply; polling does not keep jobs.
+(`ObservabilityAnalyzer`), `design_sensors` (`SensorDesigner`) and
+`assimilate_states` (`ExtendedKalmanEstimator` / `MovingHorizonEstimator`).
+Discover schemas from the service; pass the application session, bounded scalar
+parameters and task-specific options. The first five tools are asynchronous.
+`assimilate_states` defaults to a synchronous single step with `measurements`;
+`trajectory` mode defaults to an asynchronous batch. Its `asynchronous` option
+explicitly overrides that default. Assimilation requires an explicitly supported
+reduced model; conservative energy-state assimilation is unsupported. Pass
+`result.continuation` with unchanged model/options for subsequent steps and
+declare SI prior variances and per-second process variance rates.
+
+Poll asynchronous jobs with `get_task_result(jobId)` to a terminal state;
+synchronous assimilation returns JSON directly. JSON task results have no
+simulation frames and never modify the draft. Read-only sessions can retrieve
+results, but cannot execute tasks. Existing cancellation, deletion and retention
+tools apply to jobs; polling does not keep them.
 
 Preserve `run.safetyEnvelope` and violation `alerts`, and the viewer's reported
 `context.safetyEnvelope` / `safetyAlerts`. Limits are declared assumptions and
 samples cannot certify continuous-time or OEM safety. Optional `dsxControls`,
 `controlEvents`, `sharedPrimaryLoop`, `traySubmodels` and scene `solverExport`
 are service contracts; do not enable them merely to open a legacy result.
-The paired Engine supports water and DOWFROST LC25 selectors; generic `pg25`,
-`eg30`, `Re_ref`, `Re_0`, `n_re`, `Q_bep_ref` need further Engine support.
+The paired Engine supports water and DOWFROST LC25 selectors; generic `pg25`
+and `eg30` selectors remain unsupported. `Re_ref`, `Re_0`, `n_re` and `Q_bep_ref`
+are not supported component constructor parameter names. Use the supported
+`htc_reference_mdot`, `htc_hydraulic_diameter` and `htc_flow_area` parameters
+where the component admits flow-dependent HTC, and `q_bep_fraction` for the
+pump's best-efficiency flow fraction. Discover component-specific applicability;
+do not substitute these names blindly across component types.
+
+Conservative cooling towers retain declared wetted inventory/thermal geometry
+and transport dynamics, with heat rejection and fan control. Supported tower
+parameters include `thermal_mode`, `hinge_width_K`, `capacity_transition_W` and
+`fan_transition_fraction`. Verify actual model admission and execution evidence;
+this support does not enable conservative assimilation or qualify every coupled
+model or trajectory gradient.
 
 ## Reusing the MCP App
 

@@ -24,9 +24,10 @@ New experiments use the service's automatic Engine method selection. An automati
 
 The [ordinary-simulation upgrade design](docs/PLUGIN_PRODUCT_UPGRADE_DESIGN.md)
 records the implemented Plugin, MCP and UI work and its acceptance boundaries.
-The current source baseline is Plugin **0.3.1**, paired with deployed Engine
-**0.10.0** and Platform **0.10.2**. The fixed client release is `v0.3.1`;
-existing installations follow the host's normal update workflow.
+The current source candidate is Plugin **0.3.2**, paired with Platform
+**0.10.4** and Engine **0.10.1**. This pairing does not announce deployment
+or a published client release; existing installations follow the host's normal
+update workflow.
 
 Production native interaction passed after the host connection catalog was
 refreshed: actual saved-result trends, English/Chinese release dialogs and
