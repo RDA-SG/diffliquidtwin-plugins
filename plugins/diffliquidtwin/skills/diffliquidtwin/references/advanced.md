@@ -60,6 +60,46 @@ Pipe velocity and adjacent pump-inlet areas retain live optimized diameters.
 Limits remain explicit illustrative assumptions, not equipment certification.
 Legacy `objective={flow:"pipe",target:0.001}` remains supported.
 
+For minimum plant electrical power (Min-PUE under matched IT load), combine
+`elecPowerWeight`, `temperatureCeilings`, and `safetyPenalty`. Bound actual
+equipment controls: economizer valve opening, chiller `command`/`T_chw_set`,
+pump `N`, and tower `fan_speed`. Retain the baseline load, wet-bulb temperature,
+equipment and tolerances in comparisons; report watts and feasibility separately.
+
+For maximum thermal capacity, add positive `thermalPowerMaximizeWeight` and
+learnable `coldplate_power` (or `Q_chip`) / prescribed-heat `Q_air_W` coordinates.
+The objective subtracts weight times distinct selected thermal watts / 1e6 W;
+optional `thermalPowerComponents` restricts the component IDs. At least one
+active thermal coordinate is required. Omitted objective mode becomes `coupled`.
+Never specify both cold-plate aliases on one component; `air_ntu` coils reject
+thermal-power coordinates because their duty depends on UA and air inlet state.
+In scenario scope, candidates override heat inputs during rollout, including
+scheduled heat inputs, so comparisons use executed candidate power.
+
+`temperatureCeilings=[{target:"ode_state:coil.T_coil",maxK:315,weight:1000}]`
+also accepts `temperature:<node>` and `chip_peak`. All ceilings use Kelvin.
+Each adds `weight * mean(softplus(T - maxK))` (1 K width); default weight is 1000.
+Every declared `observationTimesS` sample participates even with mean aggregation.
+The result reports worst-sample `thermalMargins`, `thermalFeasible`,
+`safetyEnvelope`, `safetyFeasible` and mean total `electricalPowerW`. Sum the
+distinct thermal coordinates from returned parameters for capacity comparisons;
+retain fixed and time-varying non-optimized loads separately.
+Soft penalties do not guarantee feasibility: reject infeasible candidates and
+retain a hot spike even when the trajectory mean is cool. Neither samples nor
+initial-point gradient certificates establish continuous-time safety.
+
+A composable workflow is: qualify the initial parameter point's declared
+trajectory with `gradientQualification`; recover hydraulic/thermal parameters
+with `calibrate_parameters` from pressure, flow, Kelvin temperature and
+`elec_power` observations; track HX/coil UA or chiller COP degradation through
+first-order conservative EKF/MHE `assimilate_states`; then optimize plant power
+or thermal capacity. Keep each task's initial-point certificate and its scope,
+check both feasibility flags, and compare against a matched baseline.
+Publish baseline/candidate numeric fields with `publish_result_fields` for 3D
+selection, and persist ECharts charts plus table summaries with `publish_artifact`.
+Task JSON alone has no simulation frames; associate publications with an actual
+completed analysis/simulation and declare units, entity IDs and provenance.
+
 Scenario `controllers` admit pump `N`, valve/PICV `opening`/`u`, tower
 `fan_speed`, CRAH `fan_speed`/`T_air_in`/`Q_air_W`, and chiller
 `command`/`T_chw_set`. A `splitRange` (or `split_range`) list replaces the

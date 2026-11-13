@@ -56,6 +56,22 @@ solveScope=facility and sharedPrimaryLoop=true; conflicting authorities fail.
 CRAH water coils, economizer HX, chillers and towers are solved where active;
 air ducts remain visual context. Discover support before editing older services.
 
+Import time-varying curves with `import_load_profile`, then snapshot them with
+`bind_load_profile`; importing alone never changes the draft. Declare
+`basis="it" | "liquid" | "air"`, units, interpolation, and total/per-member
+allocation. Discover exact target IDs from the model:
+- `liquid` requires TCS and facility/hall/DU/SU/rack/tray targets.
+- `air` requires MTFW or CHW and facility/hall/DU/`target.kind="crah"`.
+  Rack, SU and tray bindings are invalid for this basis.
+- `it` uses the IT hierarchy and rejects CRAH. Liquid-only applies
+  `liquidFraction`; hybrid adds the remaining fraction across the serving
+  Hall/DU coils. Disjoint rack/SU profiles add their air shares once.
+  Standalone CHW+CW sends all IT power to coils (facility/hall/DU/rack scope,
+  with no cold plates).
+Explicit `bindings[].entityIds` obey the same compatibility rules. Invalid
+bindings leave the draft unchanged. Hybrid liquid+air and standalone air
+allocations conserve total IT power; do not manually add a second air copy.
+
 For ordinary simulation, prefer JSON configuration over Python analysis:
 
 1. Read get_scene(sceneId), saved scenario, numerical association and revision.
@@ -151,7 +167,15 @@ before submitting them. All support pressure, flow, temperature, Kelvin
 Scenario `time_resolved` aggregation preserves transient sensitivities;
 `jacobianMode` selects auto/fwd/rev. Structured multi-loop design objectives
 combine temperature/flow tracking, chip peaks, electrical power and scene-free
-safety penalties. PID controllers support `splitRange` multi-actuator bindings.
+safety penalties. Compose `elecPowerWeight` + `temperatureCeilings` +
+`safetyPenalty` for minimum plant power/PUE, or `thermalPowerMaximizeWeight` +
+those constraints for maximum thermal capacity. Check returned
+`thermalFeasible`, `thermalMargins` and `safetyFeasible` before comparing designs.
+Use initial-point `gradientQualification` for the declared trajectory, then
+calibrate, assimilate and optimize on the fixed mesh; it does not certify every
+optimizer iterate. Publish comparative 3D fields with `publish_result_fields`
+and ECharts/table evidence with `publish_artifact`.
+PID controllers support `splitRange` multi-actuator bindings.
 
 `assimilate_states` supports first-order conservative EKF/MHE over independent
 Kelvin storage states and bounded slow parameters (64 joint coordinates), plus

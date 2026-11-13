@@ -91,6 +91,27 @@ conservative assimilation support. Read the skill's advanced reference for
 five-channel observations, time-resolved aggregation, structured design terms
 and split-range PID bindings.
 
+Forward the advertised load basis `it|liquid|air` without inference.
+Liquid requires TCS and IT hierarchy targets; air requires MTFW/CHW and
+facility/hall/DU/CRAH targets. IT rejects CRAH, splitting once into liquid and
+serving Hall/DU air shares in hybrid operation; standalone CHW+CW allocates all
+IT heat to coils. Preserve additive disjoint rack profiles, total/per-member
+allocation and weights. Reject incompatible targets without changing drafts.
+
+Compose calibration and first-order EKF/MHE assimilation with qualified
+initial-point trajectory evidence and design optimization. Min-PUE combines
+`elecPowerWeight` + `temperatureCeilings` + `safetyPenalty`; Max-IT Capacity
+uses `thermalPowerMaximizeWeight` plus those ceilings/safety terms and active
+thermal coordinates. Forward optional `thermalPowerComponents` unchanged;
+duplicate `coldplate_power`/`Q_chip` aliases and `air_ntu` `Q_air_W` are invalid.
+Ceilings accept Kelvin node/storage temperatures or `chip_peak`, preserve
+every sample regardless of mean aggregation, and return worst-case
+`thermalMargins`/`thermalFeasible` alongside `safetyEnvelope`/`safetyFeasible`.
+Check both flags before claiming a usable optimum; initial-point qualification
+does not qualify distant iterates or continuous-time safety.
+Use `publish_result_fields` for sourced comparative 3D fields and
+`publish_artifact` for ECharts/table evidence associated with completed runs.
+
 ### Opt-in trajectory-gradient evidence
 
 Forward the service's `gradientQualification` object unchanged in scenario
