@@ -48,7 +48,7 @@ report queries are paged and separate from ordinary metric queries.
 ## Advanced tasks
 
 The connected service may advertise six task tools: `calibrate_parameters`
-(`Calibrator`), `optimize_controls` (`ControlOptimizer`, static setpoints),
+(`Calibrator`), `optimize_controls` (`ControlOptimizer`, static setpoints or PID gains),
 `optimize_design` (`DesignOptimizer`), `analyze_observability`
 (`ObservabilityAnalyzer`), `design_sensors` (`SensorDesigner`) and
 `assimilate_states` (`ExtendedKalmanEstimator` / `MovingHorizonEstimator`).
@@ -56,8 +56,10 @@ Discover schemas from the service; pass the application session, bounded scalar
 parameters and task-specific options. The first five tools are asynchronous.
 `assimilate_states` defaults to a synchronous single step with `measurements`;
 `trajectory` mode defaults to an asynchronous batch. Its `asynchronous` option
-explicitly overrides that default. Assimilation requires an explicitly supported
-reduced model; conservative energy-state assimilation is unsupported. Pass
+explicitly overrides that default. First-order conservative backward-Euler EKF/MHE
+supports independent Kelvin storage states and bounded slow parameters (64 joint
+coordinates), alongside reduced-model estimation. Conservative algebraic junction
+states and raw energy coordinates are rejected. Pass
 `result.continuation` with unchanged model/options for subsequent steps and
 declare SI prior variances and per-second process variance rates.
 
@@ -84,8 +86,10 @@ Conservative cooling towers retain declared wetted inventory/thermal geometry
 and transport dynamics, with heat rejection and fan control. Supported tower
 parameters include `thermal_mode`, `hinge_width_K`, `capacity_transition_W` and
 `fan_transition_fraction`. Verify actual model admission and execution evidence;
-this support does not enable conservative assimilation or qualify every coupled
-model or trajectory gradient.
+model admission and trajectory-gradient qualification remain separate from
+conservative assimilation support. Read the skill's advanced reference for
+five-channel observations, time-resolved aggregation, structured design terms
+and split-range PID bindings.
 
 ## Reusing the MCP App
 

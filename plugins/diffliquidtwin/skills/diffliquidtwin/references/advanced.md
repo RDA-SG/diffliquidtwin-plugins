@@ -22,7 +22,7 @@ from source deletion without establishing predictions under changed inputs.
 ## Parameter, control and observation tasks
 
 Use the six advertised task tools: `calibrate_parameters`, `optimize_controls`
-(static setpoints), `optimize_design`, `analyze_observability`, `design_sensors`
+(static setpoints or initial-scope PID gain/setpoint tuning), `optimize_design`, `analyze_observability`, `design_sensors`
 and `assimilate_states` for supported bounded scalar Engine parameters/observations.
 The first five tools run as asynchronous jobs. `assimilate_states` defaults to a
 synchronous single step with `measurements`, while `trajectory` mode defaults to
@@ -36,8 +36,43 @@ Use actual Engine attribute names and units, not presentation labels.
 
 executionScope=initial concerns the operating point. Where advertised, scenario
 scope and observationTimesS follow actual Hall warmup/control/event clocks with
-right-continuous samples. Generic schedules or unsupported objectives need an
-explicitly requested Python workflow. AD interface support does not establish a
+right-continuous samples. Generic solver scenes also support scenario schedules.
+`scenarioAggregation="mean"` retains legacy scalar measurements.
+`scenarioAggregation="time_resolved"`, or per-channel calibration arrays aligned
+with `observationTimesS`, retains the time-major trajectory. Declare arrays for
+every calibration channel in this mode. `jacobianMode="auto"|"fwd"|"rev"`
+selects observability and sensor-design AD routing; sensor selection retains
+each physical sensor's complete temporal block.
+
+All five observation channels are available: `pressure:<node>` [Pa],
+`flow:<component>` [m3/s], `temperature:<node>` [K],
+`ode_state:<component>.<temp_state>` [K], and `elec_power:<component>` [W].
+Use independent Kelvin aliases from the actual model, never raw `E_*` energy
+coordinates. Initial thermal/power observations select coupled evaluation.
+
+Structured design `objective` terms add normalized `flowTargets` (1e-3 m3/s),
+`temperatureTargets` (1 K), smooth `chipPeakWeight` (LogSumExp, tau=1 K,
+`referenceK=273.15` by default), and `elecPowerWeight` (1 kW).
+`powerComponents` optionally selects electrical consumers; omission includes all.
+`safetyPenalty={enabled:true,method:"softplus"|"huber",weight:1}` adds the
+Engine envelope using `scenario.safetyLimits`, with or without scene metadata.
+Pipe velocity and adjacent pump-inlet areas retain live optimized diameters.
+Limits remain explicit illustrative assumptions, not equipment certification.
+Legacy `objective={flow:"pipe",target:0.001}` remains supported.
+
+Scenario `controllers` admit pump `N`, valve/PICV `opening`/`u`, tower
+`fan_speed`, CRAH `fan_speed`/`T_air_in`/`Q_air_W`, and chiller
+`command`/`T_chw_set`. A `splitRange` (or `split_range`) list replaces the
+single component/attribute binding. Each row declares `control_key`,
+`u_min`, `u_max`, `out_min`, and `out_max` in physical SI units.
+PID command bounds must lie in [0,1]; descending output ranges are allowed.
+`optimize_controls.options.controller` uses that declaration in initial scope;
+`optimizeSetpoint=true` includes the working setpoint alongside PID gains.
+Initial-scope PID optimization requires `sampleIntervalS == scenario.dt`;
+scenario replay and live editor sessions support independent sampling clocks.
+The 2D editor displays temperature setpoints/actuators in Celsius and power
+in watts, preserves SI values on export, and connects every split-range target.
+Unsupported objectives need an explicitly requested Python workflow. AD interface support does not establish a
 complete trajectory's gradient grid accuracy. Respect paused studies and the
 user's compute scope; retain live tensors across differentiable wrappers.
 
@@ -100,15 +135,20 @@ All geometry and plant ratings are illustrative unless a declared physical
 source replaces them. Static admission and saved samples do not certify
 OEM operation, continuous safety, spatial accuracy or trajectory gradients.
 
-## Explicit reduced-only capabilities
+## Conservative and reduced estimation boundaries
 
 Conservative is the default where admitted. Reduced remains frozen and explicit;
 its quasi-steady HX/transparent-pipe behavior must not be applied to conservative
 models, which retain declared inventories and transport dynamics. Discover actual
 component/model applicability instead of combining schema-listed features.
 
-`assimilate_states` uses reduced EKF/fixed-window MHE and requires an explicit
-supported reduced selection; conservative energy-state assimilation is unsupported.
+`assimilate_states` supports first-order conservative backward-Euler EKF and
+fixed-window MHE alongside reduced frozen-inlet linearly implicit Euler estimation.
+Conservative dynamic states must be independent Kelvin storage aliases such as
+`ode_state:coil.T_coil` or `ode_state:pipe.T_cv_0`; algebraic junctions,
+mechanical references, overlapping aliases and raw Joule energy keys are rejected.
+Pressure, flow, liquid-node temperature, ODE temperature and electrical-power
+telemetry may be combined. The joint state-plus-parameter limit is 64.
 Declare selected scalar states, bounded slow parameters, SI prior variances and
 per-second process variance rates. Pass `result.continuation` with unchanged
 model/options to continue. Do not switch physical models silently or reset

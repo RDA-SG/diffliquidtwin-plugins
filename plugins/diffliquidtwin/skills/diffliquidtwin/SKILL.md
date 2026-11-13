@@ -127,6 +127,23 @@ scalar evidence and preserves coincident event observations. Reject combinations
 with ordinary metric/entity/aggregate selectors. Follow nextOffset/hasMore;
 missing historical reports remain unavailable, without hidden recomputation.
 
+## Differentiable tasks and online assimilation
+
+Use the six advertised tasks for calibration, observability, sensor selection,
+design, controls and state assimilation. Read [advanced task contracts](references/advanced.md)
+before submitting them. All support pressure, flow, temperature, Kelvin
+`ode_state:` and `elec_power:` channels where physically available.
+Scenario `time_resolved` aggregation preserves transient sensitivities;
+`jacobianMode` selects auto/fwd/rev. Structured multi-loop design objectives
+combine temperature/flow tracking, chip peaks, electrical power and scene-free
+safety penalties. PID controllers support `splitRange` multi-actuator bindings.
+
+`assimilate_states` supports first-order conservative EKF/MHE over independent
+Kelvin storage states and bounded slow parameters (64 joint coordinates), plus
+reduced-model estimation. Conservative algebraic junction states and raw energy
+coordinates are rejected. Streaming returns JSON directly; asynchronous batch
+jobs use `get_task_result(jobId)` and have no 3D simulation frames.
+
 ## Present, retain and clean
 
 Use focus_hall to select exact entities, results, metrics and time/window, or to
