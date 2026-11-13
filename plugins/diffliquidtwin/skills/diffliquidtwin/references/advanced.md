@@ -55,6 +55,51 @@ include `thermal_mode`, `hinge_width_K`, `capacity_transition_W` and
 `fan_transition_fraction`. Inspect model admission and execution evidence;
 this does not qualify every coupled model or trajectory gradient.
 
+## Multi-circuit water networks and composed equipment
+
+Hall coolingSystems supports TCS+HTFW, standalone CHW+CW and hybrid
+TCS+HTFW+MTFW+CW. CHW and MTFW are mutually exclusive. primaryPlantMode is the
+plant authority: prescribed_boundary, dedicated_plant or shared_plant. A shared
+plant requires facility scope and sharedPrimaryLoop=true. Do not sum its
+whole-model energy ledger across DU partitions.
+
+Use crah_coil parameters load_mode (prescribed_heat or air_ntu), Q_air_W,
+UA, T_air_in [K], air_flow_kg_s, fan_speed and fan_power_rated_W. Chiller
+parameters include command, T_chw_set [K], UA_evap, cooling_capacity [W],
+cop_nominal, cop_temp_coeff, design_lift_K, cop_min and W_aux [W].
+chiller_condenser_side carries a separate hydraulic curve and liquid inventory.
+Runtime events/controllers admit coil fan_speed/T_air_in/Q_air_W, chiller
+command/T_chw_set and PICV opening (canonical u); fan/command/opening bounds
+are [0,1]. Read actual constructor/schema fields; do not substitute volumetric
+air flow or UA_coil for the Engine's mass-flow and UA contract.
+
+solverExport on cooling-scene/v1 supports four-port HX/CDU and chiller,
+two-port CRAH/tower, and a one-port expansion_tank mechanical reference with
+boundaryConditions=[]. Export preserves exact port node identities, primary
+fluid assignments, paired passage couplings and explicit conservative geometry.
+The 2D editor retains paired legs, geometry, parameters and runtime setpoints.
+Published storedEnergyJ/externalHeatW sum represented sensible stores/sources;
+mechanical expansion tanks have empty sums (zero). Gas energy and pressure-volume
+work remain excluded, without an invented tank thermal inventory.
+
+summary.plant stores temperatureC, pressureKpa, dropKpa, flowLpm and heatMW on
+run.times, separately from rack summaries. query_results and viewer
+hover/series resolve these from every saved DU view. liquidHeatKW reports
+positive absorbed plate/CRAH heat, positive chiller evaporator removal,
+positive condenser rejection (evaporator plus compressor duty), and positive
+tower rejection. Select the condenser solver edge explicitly to inspect its
+distinct duty; the chiller asset defaults to the evaporator.
+
+thermalDiagnostics.energy.circuits separates TCS, HTFW, MTFW/CHW and CW
+storage changes, external heat, HX exchange and boundary exchange.
+Electrical terms distinguish pump, compressor/auxiliary and tower/CRAH fan
+power. totalElecPowerW, totalCoolingElecJ, pueCooling and plantCop retain their
+declared represented-load basis. Sampled cumulative residualJ uses quadrature;
+the instantaneous Engine balance defect remains a separate certificate.
+All geometry and plant ratings are illustrative unless a declared physical
+source replaces them. Static admission and saved samples do not certify
+OEM operation, continuous safety, spatial accuracy or trajectory gradients.
+
 ## Explicit reduced-only capabilities
 
 Conservative is the default where admitted. Reduced remains frozen and explicit;

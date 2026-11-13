@@ -36,12 +36,25 @@ Exact routes retain supplied paths; explicit auto routing connects declared
 ports around geometry. Geometry alone has no numerical coverage.
 
 Attach an executable supported solverModel, or use advertised solverExport for
-supported two-port devices with explicit physical boundaries and constitutive
-parameters. Export follows actual routes, elevations and port connectivity.
-Four-port primary/secondary HX networks need an explicit solverModel and real
-couplings. The two-port exporter does not infer them. Declare engineering
-assumptions, their source and uncertainty. Do not manufacture hidden inventory,
-conductance or ratings. Reference equipment may remain visual-only.
+two-port devices (including crah_coil and cooling_tower), four-port
+heat_exchanger/CDU and chiller, and one-port expansion_tank. HX ports use
+secondary_in/out (or in/out) plus primary_in/out; chiller uses evap_in/out and
+cond_in/out. Paired passages retain primary_hx_mapping/chiller_coupling,
+primary_fluid and explicit thermal_geometry. Only the canonical
+secondary/evaporator edge maps to the equipment; query the other solver passage
+by its exact ID. A tank liquid port creates a 0 Pa mechanical reference and
+permits solverExport.boundaryConditions=[]. Conservative transport is the
+default; exported route bores/lengths and equipment dimensions supply explicit
+inventory with source.basis=3d-instance-geometry. These are engineering
+idealizations, without OEM calibration. Inspect and override geometry/ratings
+when physical data is available. Reference equipment may remain visual-only.
+
+For parameterized DSX rooms, coolingSystems selects ["TCS","HTFW"],
+["TCS","HTFW","MTFW","CW"] or ["CHW","CW"]. primaryPlantMode selects
+prescribed_boundary, dedicated_plant or shared_plant. shared_plant requires
+solveScope=facility and sharedPrimaryLoop=true; conflicting authorities fail.
+CRAH water coils, economizer HX, chillers and towers are solved where active;
+air ducts remain visual context. Discover support before editing older services.
 
 For ordinary simulation, prefer JSON configuration over Python analysis:
 
@@ -93,6 +106,14 @@ no limits, no samples, unavailable checks, unknown absolute pressure, evaluated
 pass and violation. Zero alerts alone proves nothing. Read actual limit
 assumptions, scope, worst margin/entity/time and sampling. Never invent a rating
 or turn an arbitrary gauge into absolute pressure with an assumed offset.
+
+The viewer's circuit filters cover TCS, HTFW, MTFW, CHW and CW. Query
+temperature, pressure, drop, flow and liquidHeatKW on exact solved equipment
+and route IDs. summary.entityIds remains rack-only; summary.plant carries
+shared plant and gallery time series in root and non-root DU views. Chiller
+sampleEdgeId selects evaporator cooling (+Q_evap); its condenser passage reports
++Q_cond, including compressor heat. CRAH/plates report positive heat absorbed
+into liquid, and towers report positive rejection to ambient.
 
 Energy evidence separates storage, external/boundary power and physical/junction/
 assembly defects. HX internal exchange is not extra external heat; fan electricity
