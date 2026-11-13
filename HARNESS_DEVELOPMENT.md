@@ -91,6 +91,39 @@ conservative assimilation support. Read the skill's advanced reference for
 five-channel observations, time-resolved aggregation, structured design terms
 and split-range PID bindings.
 
+### Opt-in trajectory-gradient evidence
+
+Forward the service's `gradientQualification` object unchanged in scenario
+`config` or transient task `options`. Discover fields from the schema:
+`candidates`, two strictly finer `references`, component/type `axes`, bounded
+`parameters`, `observations`, common `timesS`, optional geometric
+`dtCandidates=[dt,dt/2,dt/4]`, `relativeGradientBudget` (default 0.01),
+`gradientFloor`, `observableBudgets`, `fdStep`, `fdRtol` and `fdAtol`.
+Three layers measure frozen-trace reverse/forward AD versus FD, optional temporal
+convergence, and three-grid spatial gradient agreement. Keep this opt-in
+separate from observable-only `meshQualification` / Engine thermal resolution
+(the conceptual `thermalResolution` workflow, not a Platform JSON field); do not enable either merely to open an old result.
+
+Transient tasks default policy scope to their own parameters, channels/objective
+and observation times, reject explicit mismatches and steady-only initial tasks,
+and qualify theta_0 once before reusing a fixed mesh through optimization.
+Cache reuse binds exact execution and numerical-source identity. Preserve
+`qualified`, `reused`, `failed`, `unqualified` and `inherited_source_evidence`
+statuses; inherited evidence cannot qualify edited inputs. The certificate is
+measured at the initial parameter point, without a continuum proof or coverage
+of distant optimizer iterates. Respect explicit compute scope and paused work.
+
+Retain `get_observation_reports(runId).thermal_transport.gradient_certificate`
+(and `resolution_certificate` when present),
+`get_hall(runId,includeConfiguration=true).configuration.reports.gradientAccuracy`,
+and `get_task_result(jobId).result.gradientQualification` / `.gradientCertificate`.
+The full certificate includes accepted-step AD/FD errors, temporal status/order,
+selected/reference meshes and relative error budget. Configuration reports stay
+bounded; certificate reads return full saved evidence without a new solve. The
+shared English/Chinese panel renders the same gradient overview and structured
+trajectory-qualification section. See the [advanced reference](plugins/diffliquidtwin/skills/diffliquidtwin/references/advanced.md#trajectory-gradient-qualification)
+for policy examples and numerical scope.
+
 ## Reusing the MCP App
 
 Obtain the UI resource from `open_hall` tool metadata (`_meta.ui.resourceUri`) or resource discovery; do not hardcode a resource version. The service publishes the viewer as `text/html;profile=mcp-app`. Run that resource in the harness's MCP App container with its declared CSP, theme, size, inputs and tool results.

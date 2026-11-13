@@ -91,8 +91,23 @@ origins, initialization, clocks, execution reports and bounded evidence. Static
 admission does not certify runtime convergence, safety or accuracy. Ordinary
 qualification applies only to its declared observables, budgets and exact
 validated inputs; reuse is not a universal scene certificate. It does not qualify
-trajectory gradients. Keep full-trajectory gradient studies separate and respect
-the user's compute scope or paused work.
+trajectory gradients. Where advertised, opt-in `gradientQualification` separately
+measures Layer 1 frozen-trace reverse/forward AD versus finite differences,
+Layer 2 optional geometric `dtCandidates` convergence, and Layer 3 three-grid
+spatial gradient agreement (default `relativeGradientBudget=0.01`). Declare
+`candidates`, two finer `references`, optional component/type `axes`, bounded
+`parameters`, `observations` and common formal `timesS`. `fdStep`, `fdRtol` and
+`fdAtol` control the parity check. See [policy fields and task defaults](references/advanced.md#trajectory-gradient-qualification).
+Do not combine it with observable-only `meshQualification` (Engine thermal
+resolution); ordinary runs without opt-in execute no gradient qualification.
+Read `get_observation_reports(runId).thermal_transport.gradient_certificate`,
+`get_hall(runId,includeConfiguration=true).configuration.reports.gradientAccuracy`,
+or `get_task_result(jobId).result.gradientQualification` / `.gradientCertificate`.
+`qualified` and `reused` cover the declared initial parameter point and measured
+trajectory; `inherited_source_evidence` cannot qualify edited inputs. The result
+is a measured three-grid refinement certificate, without an unbounded continuum
+proof or a guarantee at distant optimizer iterates. Respect the user's compute
+scope or paused studies.
 
 Discover exact solver-node/component/observation descriptors using list_entities
 kinds/query/pagination. Preserve full IDs, including colons; use discovered metric

@@ -76,6 +76,86 @@ Unsupported objectives need an explicitly requested Python workflow. AD interfac
 complete trajectory's gradient grid accuracy. Respect paused studies and the
 user's compute scope; retain live tensors across differentiable wrappers.
 
+## Trajectory gradient qualification
+
+Discover `gradientQualification` in the connected scenario and task schemas
+before using it. Ordinary JSON runs declare the policy in `config`; the five
+transient task tools declare it in `options.gradientQualification`. It is
+separate from observable-only `meshQualification`, which exposes Engine's
+thermal-resolution workflow (`solvers/thermal_resolution.py`). `thermalResolution`
+is not a Platform config field. Use observable refinement for physical outputs under absolute SI
+budgets; use gradient qualification before relying on declared trajectory
+sensitivities for calibration, design, controls, observability or sensor choice.
+Never combine the policies on the same request. No opt-in means no gradient
+qualification rollouts; ordinary simulation retains its existing compute budget.
+
+Policy fields:
+
+- `enabled` defaults to true. `candidates` is a nonempty increasing array of
+  positive integer meshes or axis-to-integer maps; `references` contains exactly
+  two strictly finer meshes. `axes` declares each axis through `components` or
+  `componentTypes`; vector meshes must match its keys. It can refine pipes,
+  HX passages, CRAH coils, chillers/condenser legs and towers where admitted.
+- `parameters` contains `{component,parameter,value,bounds:[low,high]}` rows.
+  Ordinary scenario policies can address `controller:0`, `controller:1`, etc.
+  (zero-based indices in `controllers`) with `kp`, `ki`, `kd` or `setpoint`;
+  component and controller tensors retain live reverse/forward derivatives.
+  Task policies retain the task's own parameter scope.
+  `observations` maps names to actual measurement declarations (or lists
+  channels), and `timesS` specifies strictly increasing common formal samples.
+- `relativeGradientBudget` defaults to `0.01`, `gradientFloor` to `1e-8`.
+  Optional `observableBudgets` adds positive absolute SI channel budgets;
+  `absoluteBudgets` is an alternative spelling, never combined with it.
+- `fdStep=1e-6`, `fdRtol=1e-5`, `fdAtol=1e-7` control frozen-trace central FD.
+  The Engine records and replays the accepted implicit schedule to compare
+  reverse AD, forward JVP and FD at the same initial parameter point.
+- Optional `dtCandidates=[dt,dt/2,dt/4]` requests temporal convergence. All
+  duration, event and formal sample times must align with every step; default
+  recording tracks each step. Non-geometric triples fail. Without this field,
+  Layer 2 reports `not_requested`; machine-floor differences have no fitted
+  order. `auto` resolves to SDIRK2 for qualification, without changing physics.
+
+For example, refine an actual pipe while measuring its flow:
+
+```json
+{
+  "candidates": [{"transport": 2}],
+  "references": [{"transport": 4}, {"transport": 8}],
+  "axes": {"transport": {"components": ["pipe"]}},
+  "parameters": [{"component": "pipe", "parameter": "d", "value": 0.02, "bounds": [0.01, 0.03]}],
+  "observations": {"flow:pipe": "flow:pipe"},
+  "timesS": [0, 1], "dtCandidates": [1, 0.5, 0.25],
+  "relativeGradientBudget": 0.01, "fdStep": 0.000001,
+  "fdRtol": 0.00001, "fdAtol": 0.0000001
+}
+```
+
+A transient task defaults omitted `parameters`, `observations` and `timesS` to
+its own parameters, measurement/objective channels and `observationTimesS`.
+Initial-scope `optimize_controls` defaults times to its positive rollout steps.
+Explicit conflicting scope declarations fail. Steady-only initial calibration,
+design, observability and sensor tasks reject trajectory qualification; use
+`executionScope="scenario"`. Qualification runs once at theta_0 before iteration,
+and every objective/gradient evaluation reuses the selected fixed mesh. The
+workspace caches exact policy, physics, execution, scope and numerical-source
+identity (including Engine task code); unchanged requests report `reused` without
+repeating three-grid solves. Changed inputs require new evidence.
+
+Read `get_observation_reports(runId).thermal_transport.gradient_certificate`
+alongside `resolution_certificate`. Inspect `layer1_ad_fd_parity`,
+`layer2_temporal_convergence`, selected `resolution`, `references`,
+`candidate_relative_error`, `reference_relative_change` and the declared budget.
+The three-grid error includes candidate/reference error plus reference change.
+`get_hall(runId,includeConfiguration=true).configuration.reports.gradientAccuracy`
+provides bounded evidence, including task jobs. `get_task_result(jobId).result`
+exposes full `gradientQualification` and `gradientCertificate` evidence. Saved
+`model.json` retains `thermal_transport.gradient_certificate`. The bilingual
+configuration panel reports gradient accuracy and structured layer diagnostics.
+Edited source variants without verified fresh/reused evidence are downgraded to
+`inherited_source_evidence`. Certificates cover the evaluated initial parameter
+point, observations, times and aggregation/scope only. They provide measured
+three-grid agreement, without a continuum proof or off-point iterate guarantee.
+
 ## Component parameters and conservative cooling towers
 
 `Re_ref`, `Re_0`, `n_re` and `Q_bep_ref` are not supported component constructor
