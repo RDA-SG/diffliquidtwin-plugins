@@ -24,8 +24,8 @@ New experiments use the service's automatic Engine method selection. An automati
 
 The [ordinary-simulation upgrade design](docs/PLUGIN_PRODUCT_UPGRADE_DESIGN.md)
 records the implemented Plugin, MCP and UI work and its acceptance boundaries.
-The current source candidate is Plugin **0.3.2**, paired with Platform
-**0.10.4** and Engine **0.10.1**. This pairing does not announce deployment
+The current source candidate is Plugin **0.4.0**, paired with Platform
+**0.11.0** and Engine **0.11.0**. This pairing does not announce deployment
 or a published client release; existing installations follow the host's normal
 update workflow.
 

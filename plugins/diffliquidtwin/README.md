@@ -2,14 +2,14 @@
 
 Build cooling models, run simulations and Python analyses, and explore results in linked 3D views and charts with the Red Dot AI hosted service.
 
-## Version 0.3.2
+## Version 0.4.0
 
 Guidance now covers supported ordinary composed-scene simulations, saved
 settings/revisions, explicit current versus historical inputs, numerical/spatial
 mapping and truthful safety/energy/accuracy evidence. Advanced Python/task usage
 is available separately, including all six task tools and the synchronous versus
-asynchronous assimilation modes. Plugin **0.3.2** is paired with Platform
-**0.10.4** and Engine **0.10.1** as source candidates; installing this package
+asynchronous assimilation modes. Plugin **0.4.0** is paired with Platform
+**0.11.0** and Engine **0.11.0** as source candidates; installing this package
 does not deploy its backend. Discover actual connected capabilities
 instead of assuming production availability from a version number.
 
