@@ -3,12 +3,67 @@
 Read this for requested analysis/objectives beyond ordinary JSON simulation.
 Discover current schemas and actual applicability; this is not a tool catalog.
 
+Plugin **0.5.0** targets Platform **0.12.0** and Engine **0.12.0** as
+source candidates, without announcing deployment or a `1.0` release.
+
+## Simulation scope and physical evidence
+
+This package supports differentiable thermo-hydraulic simulation and
+simulation-driven analysis/optimization. Solver-free external BI uploads are
+outside scope. `start_analysis` (MCP `run_analysis`) requires a solver-backed
+scene, an explicit executable model or a simulation-backed `sourceRunId`.
+`publish_fields` (MCP `publish_result_fields`) and `publish_artifact` require
+both a simulation/solver-backed anchor and an explicit simulation-derived
+content relationship; an unrelated run ID or unused solver model is insufficient.
+Simulation input/load-schedule charts and saved-run postprocessing remain valid.
+
+Conservative equipment admission requires declared liquid/metal inventory or an
+explicitly selected reference equipment assumption with recorded provenance.
+Otherwise admission fails; reduced physics requires an explicit user choice.
+Equipment bounding boxes cannot supply silent thermal inventory; pipe inventory
+may derive from explicit inner bore and routed length.
+Pump NPSH uses explicit `suctionDiameter` / `inletArea` first, then a unique
+single direct suction pipe bore. Multi-branch suction is `unavailable`.
+A configured NPSH constraint with unknown suction area has incomplete safety
+coverage and cannot establish `safe=True` or `safetyFeasible=True`; provide
+suction geometry before claiming safety.
+
+## Differentiation diagnostics
+
+Preserve returned `differentiationStatus` and `differentiationReason` separately
+from trajectory qualification. Status precedence is
+`unavailable > non_differentiable > saturated > differentiable`:
+
+- `unavailable`: disabled AD, failed equilibrium, unsupported derivative order,
+  or an opaque/non-AD callback. Never serialize missing evidence as `0.0`.
+- `non_differentiable`: active kink/switching boundary, including a connectivity
+  or pressure-gauge change, pump shutoff or hard PID clamp.
+- `saturated`: an authoritative smooth zero-slope saturation/deadband with a
+  fixed connectivity/gauge map. A zero local actuator slope cannot override a
+  simultaneous switching boundary.
+- `differentiable`: active AD with smooth dependence and no straddled kink.
+
+`gradientQualification` independently reports `qualified`, `failed`,
+`not_requested` or `inherited_source_evidence`; exact cache reuse may report
+`reused`. Preserve the returned scope and executed layers. Smooth local AD
+support alone does not qualify a trajectory; saturation does not mean broken AD.
+Use reproducible synthetic multi-circuit reference cases for calibration,
+assimilation and efficiency/capacity comparisons. Keep real customer/site data
+out of this repository and compare feasible results against explicit baseline
+controls without assuming a fixed percentage improvement.
+
 ## Python execution and publication
 
-run_analysis uses a supported executable scene or immutable saved-run source and
+start_analysis (MCP `run_analysis`) uses a supported executable scene, explicit
+model or immutable simulation-backed saved-run source and
 the shared asynchronous scheduler. Inspect the actual worker context and APIs;
 ctx exposes model, scene, scenario and output directory. Publish numerical fields
-through ctx.publish and artifacts through ctx.publish_artifact. Fields use exact
+through ctx.publish and artifacts through ctx.publish_artifact. Both require
+simulation-backed runIds (simulation or solver-backed analysis) or a sceneId with
+solverModel, plus explicit provenance relating content to simulation inputs/load
+schedules, outputs, model diagnostics or derived postprocessing. A visual-only
+scene without model/sourceRunId is rejected. An unused solverModel or unrelated
+runId never authorizes arbitrary external charts/fields. Fields use exact
 entity IDs, sorted seconds, time-major values, explicit units/provenance and null
 for unavailable data; they cannot impersonate builtins. Actual solver/spatial
 associations drive geometry. Publish registered bytes for remote images.

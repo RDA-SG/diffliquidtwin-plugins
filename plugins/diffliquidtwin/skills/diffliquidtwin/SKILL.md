@@ -11,6 +11,38 @@ describe_hall for actual capabilities. Installing this thin plugin does not
 upgrade its backend. Read [advanced analysis](references/advanced.md) only for
 Python or differentiable-task workflows; ordinary and safety rules are here.
 
+Plugin **0.5.0** targets Platform **0.12.0** and Engine **0.12.0**;
+this source pairing does not announce deployment or a `1.0` release.
+
+## Simulation scope and physical evidence
+
+This package supports differentiable thermo-hydraulic simulation and
+simulation-driven analysis/optimization. Solver-free external BI uploads are
+outside scope. `start_analysis` (MCP `run_analysis`) requires a solver-backed
+scene, an explicit executable model or a simulation-backed `sourceRunId`.
+`publish_fields` (MCP `publish_result_fields`) and `publish_artifact` require
+both a simulation/solver-backed anchor and an explicit simulation-derived
+content relationship; an unrelated run ID or unused solver model is insufficient.
+Simulation input/load-schedule charts and saved-run postprocessing remain valid.
+
+Conservative equipment admission requires declared liquid/metal inventory or an
+explicitly selected reference equipment assumption with recorded provenance.
+Otherwise admission fails; reduced physics requires an explicit user choice.
+Equipment bounding boxes cannot supply silent thermal inventory; pipe inventory
+may derive from explicit inner bore and routed length.
+Pump NPSH uses explicit `suctionDiameter` / `inletArea` first, then a unique
+single direct suction pipe bore. Multi-branch suction is `unavailable`.
+A configured NPSH constraint with unknown suction area has incomplete safety
+coverage and cannot establish `safe=True` or `safetyFeasible=True`; provide
+suction geometry before claiming safety.
+
+Read `differentiationStatus` and `differentiationReason`:
+`differentiable | saturated | non_differentiable | unavailable` distinguish
+smooth dependence, authoritative smooth zero-slope saturation, switching/kinks
+and missing derivative evidence. Missing derivatives must never become numeric
+zero. These states are independent of `gradientQualification`; a status alone
+does not certify trajectory-gradient accuracy.
+
 ## Sessions, sources and recovery
 
 open_hall() creates an independent workspace and editable application session.
@@ -44,10 +76,14 @@ primary_fluid and explicit thermal_geometry. Only the canonical
 secondary/evaporator edge maps to the equipment; query the other solver passage
 by its exact ID. A tank liquid port creates a 0 Pa mechanical reference and
 permits solverExport.boundaryConditions=[]. Conservative transport is the
-default; exported route bores/lengths and equipment dimensions supply explicit
-inventory with source.basis=3d-instance-geometry. These are engineering
-idealizations, without OEM calibration. Inspect and override geometry/ratings
-when physical data is available. Reference equipment may remain visual-only.
+default where admitted. Exported pipe inner bores and routed lengths may supply
+pipe inventory with source.basis=3d-instance-geometry. Chillers, HX/CDUs, towers,
+CRAH coils and cold plates need explicit thermal_geometry or a user-selected
+reference equipment assumption with recorded provenance; their 3D bounding boxes
+cannot establish internal liquid/metal stores. Missing declarations reject
+conservative admission; reduced physics requires an explicit user choice.
+Reference assumptions remain engineering idealizations, without OEM calibration.
+Reference equipment may remain visual-only.
 
 For parameterized DSX rooms, coolingSystems selects ["TCS","HTFW"],
 ["TCS","HTFW","MTFW","CW"] or ["CHW","CW"]. primaryPlantMode selects

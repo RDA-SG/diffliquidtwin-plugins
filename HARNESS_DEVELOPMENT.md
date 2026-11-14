@@ -5,7 +5,7 @@ This guide is for agents implementing a Claude or other harness package. Reuse t
 ## Repository boundaries
 
 - This public repository contains client manifests, skills, installation instructions and display assets. Use the target harness's actual package format and keep each installation entry independently testable.
-- Platform owns the MCP endpoint, OAuth resource validation, workspace state, job workers, result storage and the viewer bundle. Engine owns numerical integration and model execution. Neither belongs in a thin client package.
+- Platform owns the MCP endpoint, OAuth resource validation, workspace state, job workers, result storage and the viewer bundle. Engine owns pure thermo-hydraulic physics, numerical integration and derivative APIs; Platform owns application tasks and analysis orchestration. Neither belongs in a thin client package.
 - The Codex references are [`plugin.json`](plugins/diffliquidtwin/.codex-plugin/plugin.json), [`.mcp.json`](plugins/diffliquidtwin/.mcp.json) and the [skill](plugins/diffliquidtwin/skills/diffliquidtwin/SKILL.md). They illustrate the boundary, not a manifest format to copy into another harness.
 
 ## Connection and OAuth
@@ -47,11 +47,18 @@ report queries are paged and separate from ordinary metric queries.
 
 ## Advanced tasks
 
-The connected service may advertise six task tools: `calibrate_parameters`
-(`Calibrator`), `optimize_controls` (`ControlOptimizer`, static setpoints or PID gains),
-`optimize_design` (`DesignOptimizer`), `analyze_observability`
-(`ObservabilityAnalyzer`), `design_sensors` (`SensorDesigner`) and
-`assimilate_states` (`ExtendedKalmanEstimator` / `MovingHorizonEstimator`).
+The connected service may advertise six task tools:
+
+- `calibrate_parameters`: fit bounded model parameters to declared observations.
+- `optimize_controls`: optimize static setpoints or initial-scope PID gains,
+  optionally including the working setpoint; discover actual execution scope
+  and controller applicability before submitting.
+- `optimize_design`: optimize bounded design parameters against physical objectives.
+- `analyze_observability`: evaluate sensitivity and identifiability of declared observations.
+- `design_sensors`: select physical sensors using their complete temporal blocks.
+- `assimilate_states`: estimate supported states and bounded slow parameters
+  with EKF or fixed-window MHE.
+
 Discover schemas from the service; pass the application session, bounded scalar
 parameters and task-specific options. The first five tools are asynchronous.
 `assimilate_states` defaults to a synchronous single step with `measurements`;
@@ -154,6 +161,35 @@ Allow the App's `callServerTool` requests through the same authenticated connect
 Keep the viewer's existing panel-instance binding and applied-state reporting. A requested camera or playback change is not proof the panel displayed it; inspect the applied revision and panel context. A reopened panel takes ownership according to the service's existing rules. Do not invent a new host/session routing layer.
 
 Message, model-context attachment and fullscreen capabilities are optional and must follow capability negotiation. A harness without MCP Apps can still use the numerical tools, but cannot claim interactive viewer support. A standalone browser preview verifies page behavior only; the target harness needs its own native panel and screenshot checks.
+
+## Simulation scope and physical evidence
+
+This package supports differentiable thermo-hydraulic simulation and
+simulation-driven analysis/optimization. Solver-free external BI uploads are
+outside scope. `start_analysis` (MCP `run_analysis`) requires a solver-backed
+scene, an explicit executable model or a simulation-backed `sourceRunId`.
+`publish_fields` (MCP `publish_result_fields`) and `publish_artifact` require
+both a simulation/solver-backed anchor and an explicit simulation-derived
+content relationship; an unrelated run ID or unused solver model is insufficient.
+Simulation input/load-schedule charts and saved-run postprocessing remain valid.
+
+Conservative equipment admission requires declared liquid/metal inventory or an
+explicitly selected reference equipment assumption with recorded provenance.
+Otherwise admission fails; reduced physics requires an explicit user choice.
+Equipment bounding boxes cannot supply silent thermal inventory; pipe inventory
+may derive from explicit inner bore and routed length.
+Pump NPSH uses explicit `suctionDiameter` / `inletArea` first, then a unique
+single direct suction pipe bore. Multi-branch suction is `unavailable`.
+A configured NPSH constraint with unknown suction area has incomplete safety
+coverage and cannot establish `safe=True` or `safetyFeasible=True`; provide
+suction geometry before claiming safety.
+
+Read `differentiationStatus` and `differentiationReason`:
+`differentiable | saturated | non_differentiable | unavailable` distinguish
+smooth dependence, authoritative smooth zero-slope saturation, switching/kinks
+and missing derivative evidence. Missing derivatives must never become numeric
+zero. These states are independent of `gradientQualification`; a status alone
+does not certify trajectory-gradient accuracy.
 
 ## Solver configuration and results
 
