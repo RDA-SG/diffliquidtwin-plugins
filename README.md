@@ -54,7 +54,7 @@ does not certify trajectory-gradient accuracy.
 The [ordinary-simulation upgrade design](docs/PLUGIN_PRODUCT_UPGRADE_DESIGN.md)
 records the implemented Plugin, MCP and UI work and its acceptance boundaries.
 The current source candidate is Plugin **0.5.0**, paired with Platform
-**0.12.0** and Engine **0.12.0**. This pairing does not announce deployment
+**0.12.3** and Engine **0.12.1**. This pairing does not announce deployment
 or a published client release; existing installations follow the host's normal
 update workflow.
 

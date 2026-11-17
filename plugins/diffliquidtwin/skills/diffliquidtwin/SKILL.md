@@ -11,7 +11,7 @@ describe_hall for actual capabilities. Installing this thin plugin does not
 upgrade its backend. Read [advanced analysis](references/advanced.md) only for
 Python or differentiable-task workflows; ordinary and safety rules are here.
 
-Plugin **0.5.0** targets Platform **0.12.0** and Engine **0.12.0**;
+Plugin **0.5.0** targets Platform **0.12.3** and Engine **0.12.1**;
 this source pairing does not announce deployment or a `1.0` release.
 
 ## Simulation scope and physical evidence

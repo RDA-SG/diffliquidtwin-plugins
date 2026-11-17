@@ -3,7 +3,7 @@
 Read this for requested analysis/objectives beyond ordinary JSON simulation.
 Discover current schemas and actual applicability; this is not a tool catalog.
 
-Plugin **0.5.0** targets Platform **0.12.0** and Engine **0.12.0** as
+Plugin **0.5.0** targets Platform **0.12.3** and Engine **0.12.1** as
 source candidates, without announcing deployment or a `1.0` release.
 
 ## Simulation scope and physical evidence
