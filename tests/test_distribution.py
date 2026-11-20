@@ -1,6 +1,3 @@
-from html.parser import HTMLParser
-
-
 import json
 
 
@@ -11,6 +8,7 @@ from pathlib import Path
 
 
 import queue
+import re
 
 
 import shutil
@@ -50,6 +48,25 @@ def test_marketplaces_resolve_the_thin_codex_plugin():
     # hide a deployment error by taking the place of the service-owned App.
     assert {path.name for path in PLUGIN.iterdir()} == {
         '.codex-plugin', '.mcp.json', 'skills', 'assets', 'README.md', 'GETTING_STARTED.md'}
+
+
+@pytest.mark.parametrize('relative_path', [
+    'README.md',
+    'plugins/diffliquidtwin/README.md',
+    'plugins/diffliquidtwin/GETTING_STARTED.md',
+    'plugins/diffliquidtwin/skills/diffliquidtwin/SKILL.md',
+    'plugins/diffliquidtwin/skills/diffliquidtwin/references/advanced.md',
+])
+def test_source_version_matrix_matches_packaged_release(relative_path):
+    # Source compatibility is distinct from deployment evidence. Check the
+    # published matrix against the actual client manifest, across all guides.
+    manifest = json.loads((PLUGIN / '.codex-plugin/plugin.json').read_text())
+    expected = {'Plugin': manifest['version'], 'Platform': '0.12.4', 'Engine': '0.12.1'}
+    text = (ROOT / relative_path).read_text()
+    pairs = re.findall(r'\b(Plugin|Platform|Engine)\s+\*{0,2}(\d+\.\d+\.\d+)\b', text)
+    observed = {product: {version for name, version in pairs if name == product}
+                for product in expected}
+    assert observed == {product: {version} for product, version in expected.items()}
 
 
 def test_installed_codex_parser_discovers_the_remote_server(tmp_path):

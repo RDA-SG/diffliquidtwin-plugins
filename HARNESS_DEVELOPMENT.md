@@ -105,6 +105,18 @@ serving Hall/DU air shares in hybrid operation; standalone CHW+CW allocates all
 IT heat to coils. Preserve additive disjoint rack profiles, total/per-member
 allocation and weights. Reject incompatible targets without changing drafts.
 
+For container-scoped `bind_load_profile`, use
+`target={"kind": "facility"|"hall"|"du"|"su"|"rack", "id": ...}` and omit
+`bindings`; supply `allocation="total"|"per-member"` and select `seriesId` for
+multi-series sources. The service expands that scope; facility may omit `id`.
+Leaf `tray` and `crah` targets follow the same basis restrictions.
+For explicit leaves, use `bindings=[{"seriesId": ..., "entityIds": [...],
+"distribution": "total"|"per-member"}]`. Those IDs must identify compatible
+leaf coldplates, racks or CRAHs, never facility/Hall/DU/SU containers. Each
+binding requires `distribution`; top-level `allocation` cannot substitute for
+it. Weights apply only to totals. `bindings=[]` unbinds instead of expanding a
+target. `validateOnly=true` checks the full candidate without mutation.
+
 Compose calibration and first-order EKF/MHE assimilation with qualified
 initial-point trajectory evidence and design optimization. Min-PUE combines
 `elecPowerWeight` + `temperatureCeilings` + `safetyPenalty`; Max-IT Capacity
@@ -164,32 +176,11 @@ Message, model-context attachment and fullscreen capabilities are optional and m
 
 ## Simulation scope and physical evidence
 
-This package supports differentiable thermo-hydraulic simulation and
-simulation-driven analysis/optimization. Solver-free external BI uploads are
-outside scope. `start_analysis` (MCP `run_analysis`) requires a solver-backed
-scene, an explicit executable model or a simulation-backed `sourceRunId`.
-`publish_fields` (MCP `publish_result_fields`) and `publish_artifact` require
-both a simulation/solver-backed anchor and an explicit simulation-derived
-content relationship; an unrelated run ID or unused solver model is insufficient.
-Simulation input/load-schedule charts and saved-run postprocessing remain valid.
-
-Conservative equipment admission requires declared liquid/metal inventory or an
-explicitly selected reference equipment assumption with recorded provenance.
-Otherwise admission fails; reduced physics requires an explicit user choice.
-Equipment bounding boxes cannot supply silent thermal inventory; pipe inventory
-may derive from explicit inner bore and routed length.
-Pump NPSH uses explicit `suctionDiameter` / `inletArea` first, then a unique
-single direct suction pipe bore. Multi-branch suction is `unavailable`.
-A configured NPSH constraint with unknown suction area has incomplete safety
-coverage and cannot establish `safe=True` or `safetyFeasible=True`; provide
-suction geometry before claiming safety.
-
-Read `differentiationStatus` and `differentiationReason`:
-`differentiable | saturated | non_differentiable | unavailable` distinguish
-smooth dependence, authoritative smooth zero-slope saturation, switching/kinks
-and missing derivative evidence. Missing derivatives must never become numeric
-zero. These states are independent of `gradientQualification`; a status alone
-does not certify trajectory-gradient accuracy.
+Apply the packaged skill's shared [simulation scope and physical evidence rules](plugins/diffliquidtwin/skills/diffliquidtwin/SKILL.md#simulation-scope-and-physical-evidence)
+in every harness. Preserve solver-backed `run_analysis`, `publish_result_fields`
+and `publish_artifact` admission/provenance, inventory assumptions, NPSH coverage
+and derivative diagnostics. Keep unavailable evidence and qualification scope
+intact in both model-facing responses and the App.
 
 ## Solver configuration and results
 

@@ -1,7 +1,14 @@
 # Plugin and product upgrade design for the ordinary-simulation release
 
-Current integration status (2026-11-12): Engine 0.10.0 and Platform 0.10.2
-are deployed; Plugin 0.3.1 is the client source/release baseline. Production
+> **Historical design record.** The dated status, version pairings, proposed
+> interfaces and acceptance evidence below describe the original ordinary-simulation
+> release. They do not specify the current deployment or source acceptance matrix.
+> See the [repository README](../README.md#development) for the current source
+> pairing and the [packaged skill](../plugins/diffliquidtwin/skills/diffliquidtwin/SKILL.md)
+> for current agent contracts. Historical versions and chronology are retained.
+
+Historical integration status (2026-11-12): Engine 0.10.0 and Platform 0.10.2
+were deployed; Plugin 0.3.1 was the client source/release baseline. Production
 native interaction passed after refreshing the host connection catalog,
 including saved-result trends, English/Chinese release dialogs and actual
 832/319 CSS-pixel layouts. Automatic historical-card replacement remains

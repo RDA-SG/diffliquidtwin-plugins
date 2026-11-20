@@ -22,49 +22,31 @@ New experiments use the service's automatic Engine method selection. An automati
 
 ## Simulation scope and physical evidence
 
-This package supports differentiable thermo-hydraulic simulation and
-simulation-driven analysis/optimization. Solver-free external BI uploads are
-outside scope. `start_analysis` (MCP `run_analysis`) requires a solver-backed
-scene, an explicit executable model or a simulation-backed `sourceRunId`.
-`publish_fields` (MCP `publish_result_fields`) and `publish_artifact` require
-both a simulation/solver-backed anchor and an explicit simulation-derived
-content relationship; an unrelated run ID or unused solver model is insufficient.
-Simulation input/load-schedule charts and saved-run postprocessing remain valid.
-
-Conservative equipment admission requires declared liquid/metal inventory or an
-explicitly selected reference equipment assumption with recorded provenance.
-Otherwise admission fails; reduced physics requires an explicit user choice.
-Equipment bounding boxes cannot supply silent thermal inventory; pipe inventory
-may derive from explicit inner bore and routed length.
-Pump NPSH uses explicit `suctionDiameter` / `inletArea` first, then a unique
-single direct suction pipe bore. Multi-branch suction is `unavailable`.
-A configured NPSH constraint with unknown suction area has incomplete safety
-coverage and cannot establish `safe=True` or `safetyFeasible=True`; provide
-suction geometry before claiming safety.
-
-Read `differentiationStatus` and `differentiationReason`:
-`differentiable | saturated | non_differentiable | unavailable` distinguish
-smooth dependence, authoritative smooth zero-slope saturation, switching/kinks
-and missing derivative evidence. Missing derivatives must never become numeric
-zero. These states are independent of `gradientQualification`; a status alone
-does not certify trajectory-gradient accuracy.
+The package supports simulation-driven analysis and optimization; solver-free
+external BI uploads are outside scope. The packaged skill defines the shared
+[simulation scope and physical evidence rules](plugins/diffliquidtwin/skills/diffliquidtwin/SKILL.md#simulation-scope-and-physical-evidence),
+including solver-backed publication, declared equipment inventory, incomplete
+NPSH coverage and derivative diagnostics. Consult those rules before claiming
+physical coverage, safety or gradient accuracy.
 
 ## Development
 
 The [ordinary-simulation upgrade design](docs/PLUGIN_PRODUCT_UPGRADE_DESIGN.md)
-records the implemented Plugin, MCP and UI work and its acceptance boundaries.
+is a historical record of the implemented Plugin, MCP and UI work and its
+original acceptance boundaries.
 The current source candidate is Plugin **0.5.0**, paired with Platform
-**0.12.3** and Engine **0.12.1**. This pairing does not announce deployment
+**0.12.4** and Engine **0.12.1**. This pairing does not announce deployment
 or a published client release; existing installations follow the host's normal
 update workflow.
 
-Production native interaction passed after the host connection catalog was
-refreshed: actual saved-result trends, English/Chinese release dialogs and
+Historical production acceptance (2026-11-12) passed after the host connection
+catalog was refreshed: actual saved-result trends, English/Chinese release dialogs and
 832/319 CSS-pixel layouts were exercised. Supported explicit same-session
 reopening is verified; automatic replacement of every historical cached card
-remains unqualified. Platform owns `prototype/DEPLOYMENT_20261111.md` and the
-separate, locally verified menu follow-up that is merged in source but not
-deployed. Source integration does not change the fixed production installation
+remained unqualified at that boundary. Platform's
+`prototype/DEPLOYMENT_20261111.md` records that deployment and the separate,
+locally verified menu follow-up that was merged in source but not deployed.
+This historical evidence does not qualify the current source pairing. Source integration does not change the fixed production installation
 or resume deferred full-gradient studies.
 
 For Claude or another harness, follow the [harness development guide](HARNESS_DEVELOPMENT.md). The server publishes the shared frontend and current tool schemas.

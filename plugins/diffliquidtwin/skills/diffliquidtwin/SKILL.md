@@ -11,16 +11,16 @@ describe_hall for actual capabilities. Installing this thin plugin does not
 upgrade its backend. Read [advanced analysis](references/advanced.md) only for
 Python or differentiable-task workflows; ordinary and safety rules are here.
 
-Plugin **0.5.0** targets Platform **0.12.3** and Engine **0.12.1**;
+Plugin **0.5.0** targets Platform **0.12.4** and Engine **0.12.1**;
 this source pairing does not announce deployment or a `1.0` release.
 
 ## Simulation scope and physical evidence
 
 This package supports differentiable thermo-hydraulic simulation and
 simulation-driven analysis/optimization. Solver-free external BI uploads are
-outside scope. `start_analysis` (MCP `run_analysis`) requires a solver-backed
+outside scope. `run_analysis` requires a solver-backed
 scene, an explicit executable model or a simulation-backed `sourceRunId`.
-`publish_fields` (MCP `publish_result_fields`) and `publish_artifact` require
+`publish_result_fields` and `publish_artifact` require
 both a simulation/solver-backed anchor and an explicit simulation-derived
 content relationship; an unrelated run ID or unused solver model is insufficient.
 Simulation input/load-schedule charts and saved-run postprocessing remain valid.
@@ -104,7 +104,21 @@ allocation. Discover exact target IDs from the model:
   Hall/DU coils. Disjoint rack/SU profiles add their air shares once.
   Standalone CHW+CW sends all IT power to coils (facility/hall/DU/rack scope,
   with no cold plates).
-Explicit `bindings[].entityIds` obey the same compatibility rules. Invalid
+Choose one binding form:
+- Container scope: pass `target={"kind": "facility"|"hall"|"du"|"su"|"rack", "id": ...}`
+  with `bindings` omitted, plus `allocation="total"|"per-member"` and, for a
+  multi-series source, `seriesId`. The service expands the container into load
+  entities. Use discovered IDs; facility scope may omit `id`. Leaf `tray` and
+  `crah` targets are also available subject to the basis rules above.
+- Explicit leaves: pass `bindings=[{"seriesId": ..., "entityIds": [...],
+  "distribution": "total"|"per-member"}]`. Each `entityIds` entry must be an
+  actual leaf coldplate, rack or CRAH ID compatible with the declared basis.
+  Facility, Hall, DU and SU container IDs are invalid here; use `target` for
+  expansion instead. Top-level `allocation` does not replace each binding's
+  required `distribution`. Optional weights apply only to total distribution.
+
+`bindings=[]` unbinds the profile; it does not request container expansion.
+Use `validateOnly=true` to check a candidate without editing the draft. Invalid
 bindings leave the draft unchanged. Hybrid liquid+air and standalone air
 allocations conserve total IT power; do not manually add a second air copy.
 
