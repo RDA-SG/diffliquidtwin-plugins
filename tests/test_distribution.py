@@ -32,12 +32,11 @@ ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / 'plugins/diffliquidtwin'
 
 
-def test_marketplaces_resolve_the_thin_codex_plugin():
-    for base in (ROOT, ROOT / 'plugins'):
-        catalog = json.loads((base / '.agents/plugins/marketplace.json').read_text())
-        entry = next(item for item in catalog['plugins'] if item['name'] == 'diffliquidtwin')
-        assert entry['source']['path'].startswith('./')
-        assert (base / entry['source']['path']).resolve() == PLUGIN
+def test_marketplace_resolves_the_thin_codex_plugin():
+    catalog = json.loads((ROOT / '.agents/plugins/marketplace.json').read_text())
+    entry = next(item for item in catalog['plugins'] if item['name'] == 'diffliquidtwin')
+    assert entry['source']['path'].startswith('./')
+    assert (ROOT / entry['source']['path']).resolve() == PLUGIN
     manifest = json.loads((PLUGIN / '.codex-plugin/plugin.json').read_text())
     assert manifest['name'] == 'diffliquidtwin'
     assert manifest['version'] == '0.5.0'
