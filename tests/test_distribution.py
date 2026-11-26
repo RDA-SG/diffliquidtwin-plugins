@@ -39,7 +39,7 @@ def test_marketplace_resolves_the_thin_codex_plugin():
     assert (ROOT / entry['source']['path']).resolve() == PLUGIN
     manifest = json.loads((PLUGIN / '.codex-plugin/plugin.json').read_text())
     assert manifest['name'] == 'diffliquidtwin'
-    assert manifest['version'] == '0.5.0'
+    assert manifest['version'] == '0.5.1'
     assert (PLUGIN / 'skills/diffliquidtwin/SKILL.md').is_file()
     for field in ('logo', 'logoDark', 'composerIcon', 'composerIconDark'):
         assert (PLUGIN / manifest['interface'][field]).is_file()
@@ -60,7 +60,7 @@ def test_source_version_matrix_matches_packaged_release(relative_path):
     # Source compatibility is distinct from deployment evidence. Check the
     # published matrix against the actual client manifest, across all guides.
     manifest = json.loads((PLUGIN / '.codex-plugin/plugin.json').read_text())
-    expected = {'Plugin': manifest['version'], 'Platform': '0.12.4', 'Engine': '0.12.1'}
+    expected = {'Plugin': manifest['version'], 'Platform': '0.12.5', 'Engine': '0.12.2'}
     text = (ROOT / relative_path).read_text()
     pairs = re.findall(r'\b(Plugin|Platform|Engine)\s+\*{0,2}(\d+\.\d+\.\d+)\b', text)
     observed = {product: {version for name, version in pairs if name == product}

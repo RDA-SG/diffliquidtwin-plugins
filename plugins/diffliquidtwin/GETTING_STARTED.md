@@ -32,8 +32,8 @@ unknown absolute pressure are coverage gaps. Energy evidence and requested
 accuracy qualification appear in configuration details. Missing reports do not
 mean successful checks. Optional qualification can add reference computation;
 trajectory-gradient qualification is separate. Availability follows connected
-capabilities; Plugin **0.5.0** is paired with Platform **0.12.4** and Engine
-**0.12.1** as source candidates, without announcing production deployment. When
+capabilities; Plugin **0.5.1** is paired with Platform **0.12.5** and Engine
+**0.12.2**. This pairing does not identify the live service version. When
 persistent settings are absent, the agent can explain which explicitly requested
 one-run workflows remain available.
 
