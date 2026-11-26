@@ -9,7 +9,7 @@ settings/revisions, explicit current versus historical inputs, numerical/spatial
 mapping and truthful safety/energy/accuracy evidence. Advanced Python/task usage
 is available separately, including all six task tools and the synchronous versus
 asynchronous assimilation modes. Plugin **0.5.1** is paired with Platform
-**0.12.5** and Engine **0.12.2**; installing this package
+**0.12.6** and Engine **0.12.2**; installing this package
 does not deploy its backend. Discover actual connected capabilities
 instead of assuming production availability from a version number.
 

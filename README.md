@@ -35,7 +35,7 @@ The [ordinary-simulation upgrade design](docs/PLUGIN_PRODUCT_UPGRADE_DESIGN.md)
 is a historical record of the implemented Plugin, MCP and UI work and its
 original acceptance boundaries.
 The release pairs Plugin **0.5.1** with Platform
-**0.12.5** and Engine **0.12.2**. This pairing does not announce deployment
+**0.12.6** and Engine **0.12.2**. This pairing does not announce deployment
 or a published client release; existing installations follow the host's normal
 update workflow.
 
